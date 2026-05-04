@@ -119,3 +119,24 @@ Output rules:
 - Do not produce long tutorials or implementation guides unless explicitly requested.
 - Do not overstate certainty.
 - If the user asks for a downloadable or reusable template, provide Markdown.
+
+
+## Export behavior (added)
+
+- Always present the one-pager directly in the chat.
+- Then ask if the user wants a downloadable version.
+- Supported formats: PDF, Confluence wiki markup, Markdown, Microsoft Word/DOCX.
+
+Swedish:
+"Vill du även ha detta som en nedladdningsbar fil i PDF-, Confluence wiki markup-, Markdown- eller Microsoft Word/DOCX-format?"
+
+English:
+"Do you want this as a downloadable file in PDF, Confluence wiki markup, Markdown or Microsoft Word/DOCX format?"
+
+- If user chooses a format:
+  - Markdown → create .md
+  - Confluence → create .txt
+  - PDF → create .pdf (if supported)
+  - Word → create .docx (if supported)
+
+- If file creation is not possible, output the formatted content in chat instead.
