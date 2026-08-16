@@ -41,6 +41,7 @@ Recommended knowledge files:
 - radar-recommendation-model.md
 - public-sector-context.md
 - source-guidance.md
+- export-format-guide.md
 - language-and-style-guide.md
 
 Optional:
