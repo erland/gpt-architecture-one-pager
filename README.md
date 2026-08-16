@@ -44,6 +44,7 @@ architecture-one-pager-gpt-production-v2/
 │   ├── radar-recommendation-model.md
 │   ├── public-sector-context.md
 │   ├── source-guidance.md
+│   ├── export-format-guide.md
 │   └── language-and-style-guide.md
 ├── examples/
 │   ├── example-prompts.md
@@ -82,3 +83,35 @@ GPT: Which method should I create the one pager for?
 User: Event Storming.
 GPT: [Creates English one pager for Event Storming]
 ```
+
+## Portable Chat distribution and releases
+
+The repository can also build a portable ChatGPT package from the same source files used by the Custom GPT.
+
+Build locally:
+
+```bash
+python3 scripts/build_distributions.py
+python3 scripts/validate_distributions.py
+```
+
+This creates:
+
+```text
+dist/
+├── architecture-one-pager-custom-gpt-vX.Y.Z.zip
+└── architecture-one-pager-chat-vX.Y.Z.zip
+```
+
+For normal push, pull request and manual workflow runs, the version in `VERSION` is used.
+
+For a published GitHub Release, the release tag is the version source. A release tagged `v1.1.0` therefore creates:
+
+```text
+architecture-one-pager-custom-gpt-v1.1.0.zip
+architecture-one-pager-chat-v1.1.0.zip
+```
+
+The release workflow validates the packages and attaches both ZIP files to the GitHub Release for long-term storage.
+
+To use the portable package in a normal ChatGPT conversation, attach `architecture-one-pager-chat-vX.Y.Z.zip` and ask ChatGPT to read `START-HERE.md` first.
