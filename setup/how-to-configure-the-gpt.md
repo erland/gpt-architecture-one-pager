@@ -18,34 +18,37 @@ gpt-configuration/gpt-instructions.txt
 
 into the GPT instruction field.
 
+This is the canonical runtime source used by both distributions. The portable chat build embeds the same instructions into `START-HERE.md`, so Custom GPT and chat behavior cannot silently drift apart.
+
 This v2 instruction file includes:
 - generic conversation-starter behavior
 - one follow-up question when the concrete topic is missing
 - full language matching for headings and templates
 - Swedish recommendation labels: Inför / Testa / Utvärdera / Avvakta
 
-## 3. Add knowledge files
+## 3. Add supporting knowledge files
 
-Upload all files from:
+Upload the five files from:
 
 ```text
 knowledge/
 ```
 
 Recommended knowledge files:
-- architecture-one-pager-method.md
-- classification-guide.md
-- one-pager-template.md
-- one-pager-template-sv.md
-- assessment-criteria.md
-- radar-recommendation-model.md
-- public-sector-context.md
-- source-guidance.md
-- export-format-guide.md
-- language-and-style-guide.md
+- `01-topic-classification-and-focus.md`
+- `02-assessment-reference.md`
+- `03-public-sector-and-enterprise-context.md`
+- `04-source-and-evidence-guidance.md`
+- `05-output-language-and-export-reference.md`
 
-Optional:
-Upload the files in `examples/` if you want the GPT to have examples of the intended output style.
+These files add depth but do not define the mandatory workflow. The GPT should still perform its core one-pager behavior if retrieval of a particular knowledge file does not occur.
+
+Optional golden examples:
+- `examples/golden-example-method-sv.md`
+- `examples/golden-example-technology-en.md`
+- `examples/golden-example-trend-en.md`
+
+Upload them only if additional style guidance is useful. Examples are not factual sources and must not override the instructions.
 
 ## 4. Enable capabilities
 
@@ -140,3 +143,15 @@ You can adapt the GPT for a specific organization by adding a knowledge file wit
 - current strategic initiatives
 
 Do not hard-code confidential data unless the GPT is configured for the intended audience and information classification.
+
+
+## 8. Runtime/build validation
+
+For repository maintainers, build and validate with:
+
+```bash
+python3 scripts/build_distributions.py
+python3 scripts/validate_distributions.py
+```
+
+The validation is intentionally stricter than ZIP integrity. It also checks that the small-model runtime contract still contains all eight mandatory workflow stages, exactly-one recommendation behavior, bilingual output markers, the neutral organization baseline, knowledge-independence guardrails and the generated portable-chat entrypoint.

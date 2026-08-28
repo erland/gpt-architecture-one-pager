@@ -46,6 +46,9 @@ jobs:
       - name: Validate distributions
         run: python3 scripts/validate_distributions.py --version '${{ steps.version.outputs.version }}'
 
+      - name: Validate runtime regressions
+        run: python3 scripts/validate_runtime_regressions.py
+
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
         with:
