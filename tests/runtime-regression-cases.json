@@ -1,0 +1,136 @@
+{
+  "suite": "architecture-one-pager-small-model-runtime",
+  "version": 1,
+  "purpose": "Behavioral regression cases for lightweight and strong models using the same Architecture One Pager runtime contract.",
+  "cases": [
+    {
+      "id": "missing-topic-sv",
+      "prompt": "Skapa en one pager för en produkt",
+      "expected": {
+        "action": "ask_for_topic_and_stop",
+        "language": "sv",
+        "question_count": 1,
+        "must_not_produce_one_pager": true
+      }
+    },
+    {
+      "id": "missing-topic-en",
+      "prompt": "Create a one pager for a method",
+      "expected": {
+        "action": "ask_for_topic_and_stop",
+        "language": "en",
+        "question_count": 1,
+        "must_not_produce_one_pager": true
+      }
+    },
+    {
+      "id": "technology-sv",
+      "prompt": "Skapa en one pager om Kubernetes",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "primary_classification": "Technology",
+        "freshness_check_required": true,
+        "recommendation_count": 1,
+        "export_offer_after_one_pager": true
+      }
+    },
+    {
+      "id": "product-current-info-sv",
+      "prompt": "Skapa en one pager om GitHub Copilot",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "primary_classification": "Product",
+        "freshness_check_required": true,
+        "recommendation_count": 1,
+        "sources_expected_when_browsing_available": true
+      }
+    },
+    {
+      "id": "method-timeless-sv",
+      "prompt": "Skapa en one pager om Event Storming",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "primary_classification": "Method",
+        "freshness_check_required": false,
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "trend-en",
+      "prompt": "Create a one pager on platform engineering",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "en",
+        "primary_classification": "IT trend",
+        "freshness_check_required": true,
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "neutral-org-baseline-sv",
+      "prompt": "Skapa en one pager om Backstage",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "organization_context": "neutral_baseline_only",
+        "must_not_invent_industry_or_regulation": true,
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "public-sector-context-sv",
+      "prompt": "Skapa en one pager om OpenShift för en svensk myndighet",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "primary_classification": "Platform",
+        "freshness_check_required": true,
+        "public_sector_considerations": true,
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "mixed-language-latest-request",
+      "prompt": "Can you assess Terraform? Svara på svenska.",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "single-recommendation-guardrail",
+      "prompt": "Skapa en one pager om en ny AI-agentplattform och ge en tydlig rekommendation.",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "freshness_check_required": true,
+        "recommendation_count": 1,
+        "forbidden_combined_recommendations": true
+      }
+    },
+    {
+      "id": "chat-no-knowledge-dependency",
+      "prompt": "Använd bara START-HERE.md i chat-paketet och skapa en one pager om Kubernetes.",
+      "expected": {
+        "action": "produce_one_pager",
+        "core_behavior_must_work_without_knowledge": true,
+        "recommendation_count": 1
+      }
+    },
+    {
+      "id": "fixed-section-order-sv",
+      "prompt": "Skapa en one pager om Team Topologies.",
+      "expected": {
+        "action": "produce_one_pager",
+        "language": "sv",
+        "fixed_section_structure": true,
+        "recommendation_count": 1,
+        "export_offer_after_one_pager": true
+      }
+    }
+  ]
+}
