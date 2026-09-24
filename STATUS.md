@@ -2,7 +2,7 @@
 
 **Produktversion:** 1.0.0  
 **Migration:** GPT Byggaren 1.5.0  
-**Tillstånd:** Konvertering pågår
+**Tillstånd:** Maintenance
 
 ## Migrationssteg
 
@@ -10,7 +10,7 @@
 - [x] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
 - [x] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
 - [x] Steg 4 – Runtime parity och modern releaseleverans
-- [ ] Steg 5 – Slutregression, hygiene och reproducerbar release
+- [x] Steg 5 – Slutregression, hygiene och reproducerbar release
 
 ## Runtime-bedömning
 
@@ -46,6 +46,14 @@ CI passerade Claude Projects- och OpenCode-distributionerna tillsammans med befi
 
 CI passerade runtime parity för alla fem bedömda runtimes. Aktiva peers är ChatGPT Chat, Custom GPT, Claude Projects och OpenCode; OpenAI Plugin är reduced/inactive. Releaseleveransen bygger nu Project ZIP samt fyra runtime-ZIP:ar, SHA256SUMS.txt och DELIVERY-MANIFEST.json. Release readiness verifierar hela leveransen.
 
-## Aktuellt steg
+## Verifiering av steg 5
 
-**Steg 5 – Slutregression, hygiene och reproducerbar release.**
+Slutkörningen passerade hela bygg- och regressionskedjan inklusive final project hygiene, workflow parity och reproducerbarhetskontroll. Reproducerbarhetsgrinden byggde Project, Chat, Custom GPT, Claude och OpenCode samt SHA256SUMS.txt och DELIVERY-MANIFEST.json två gånger och verifierade identiska SHA-256-hashar.
+
+## Aktuellt läge
+
+Konverteringen till GPT Byggaren 1.5.0 är klar. Projektet är i **maintenance-läge** och PR:n är redo att mergeas.
+
+## Blockerare
+
+Inga.
