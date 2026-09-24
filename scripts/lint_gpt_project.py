@@ -42,7 +42,18 @@ canonical=(ROOT/"gpt-configuration/gpt-instructions.txt").read_text(encoding="ut
 for marker in core.get("required_markers",[]):
     check(marker in canonical,f"canonical instruction missing marker: {marker}")
 
+testing=cfg.get("testing",{})
+check(testing.get("manifest")=="tests/test-manifest.yaml","GPT Builder test manifest not registered")
+check(testing.get("manifest_schema")=="schemas/test-manifest.schema.json","test manifest schema not registered")
+check(testing.get("runtime_cases")=="tests/runtime-regression-cases.json","runtime regression catalog not registered")
+check(testing.get("contract_validator")=="scripts/validate_gpt_builder_tests.py","test contract validator not registered")
+check(testing.get("deterministic_contracts_block_release") is True,"deterministic test contracts must block")
+check(testing.get("live_model_runtime_evals_are_separate") is True,"live model runtime evals must be separate")
+
 for rel in [
+    "schemas/test-manifest.schema.json",
+    "tests/test-manifest.yaml",
+    "scripts/validate_gpt_builder_tests.py",
     "schemas/capability-contract.schema.json",
     "schemas/artifact-contract.schema.json",
     "schemas/workspace-state-contract.schema.json",
