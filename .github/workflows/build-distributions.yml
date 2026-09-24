@@ -23,6 +23,12 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install validation dependencies
+        run: python3 -m pip install pyyaml
+
+      - name: Lint GPT Builder project
+        run: python3 scripts/lint_gpt_project.py
+
       - name: Resolve version
         id: version
         shell: bash
