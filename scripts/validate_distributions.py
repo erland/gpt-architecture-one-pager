@@ -123,6 +123,8 @@ def validate(version: str, dist: Path) -> None:
                 raise RuntimeError(f"Corrupt ZIP member in {p.name}: {bad}")
 
     with zipfile.ZipFile(custom_path) as zf:
+        if "runtime-contract.json" not in zf.namelist():
+            raise RuntimeError("Custom GPT runtime contract missing")
         for src in CUSTOM_SOURCE_FILES:
             assert_same(zf, src.relative_to(ROOT).as_posix(), src)
         if zf.read("VERSION").decode().strip() != version:
@@ -135,6 +137,8 @@ def validate(version: str, dist: Path) -> None:
             raise RuntimeError("Wrong Custom GPT runtime entrypoint")
 
     with zipfile.ZipFile(chat_path) as zf:
+        if "assistant/runtime-contract.json" not in zf.namelist():
+            raise RuntimeError("Chat runtime contract missing")
         assert_same(zf, "assistant/instructions.txt", CANONICAL_INSTRUCTIONS)
         assert_same(zf, "assistant/conversation-starters.md", ROOT / "gpt-configuration/conversation-starters.md")
         for src in KNOWLEDGE + EXAMPLES:

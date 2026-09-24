@@ -1,0 +1,26 @@
+schema_version: 1
+suites:
+  distribution_contract:
+    type: deterministic
+    blocking: true
+    path: scripts/validate_distributions.py
+    runner: scripts/validate_distributions.py
+    commands:
+      - python3 scripts/build_distributions.py
+      - python3 scripts/validate_distributions.py
+    description: Verifierar canonical instruktion, runtimeprofiler, ZIP-integritet, manifests och semantisk parity för Chat/Custom.
+
+  runtime_behavior_contract:
+    type: behavioral_contract
+    blocking: true
+    path: tests/runtime-regression-cases.json
+    runner: scripts/validate_runtime_regressions.py
+    commands:
+      - python3 scripts/validate_runtime_regressions.py
+    description: Tolv small-model-sensitive regressionfall som deterministiskt validerar att canonical instruktion fortfarande innehåller de regler fallen kräver.
+
+  live_model_runtime:
+    type: manual_runtime
+    blocking: false
+    path: tests/runtime-regression-cases.json
+    description: Samma tolv prompts kan köras manuellt mot faktiska Luna/Sol eller andra peer-runtimes. Resultat dokumenteras separat och är inte samma sak som den deterministiska kontraktsvalideringen.
