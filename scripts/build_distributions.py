@@ -73,6 +73,7 @@ def write_zip(src_dir: Path, out: Path) -> None:
 def build_custom(stage: Path, version: str) -> None:
     for src in CUSTOM_SOURCE_FILES:
         copy_file(src, stage / src.relative_to(ROOT))
+    copy_file(ROOT / "runtime-contracts/chatgpt-custom.json", stage / "runtime-contract.json")
     write_text(stage / "VERSION", version + "\n")
     write_text(
         stage / "RUNTIME-PROFILE.json",
@@ -82,6 +83,7 @@ def build_custom(stage: Path, version: str) -> None:
 
 def build_chat(stage: Path, version: str) -> None:
     write_text(stage / "START-HERE.md", build_chat_entrypoint())
+    copy_file(ROOT / "runtime-contracts/chatgpt-chat.json", stage / "assistant/runtime-contract.json")
     copy_file(CANONICAL_INSTRUCTIONS, stage / "assistant/instructions.txt")
     copy_file(ROOT / "gpt-configuration/conversation-starters.md", stage / "assistant/conversation-starters.md")
     for src in KNOWLEDGE + EXAMPLES:
