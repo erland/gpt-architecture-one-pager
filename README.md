@@ -139,3 +139,19 @@ The regression validator is deterministic and does not call an external model AP
 ## Model compatibility
 
 The Custom GPT and portable Chat distributions use the same canonical runtime contract. Model-specific behavior and known limitations are recorded in `tests/model-compatibility-observations.md`; the runtime is not forked solely to work around a limitation in one lightweight model.
+
+
+## GPT Builder 1.5 distributions
+
+Architecture One Pager is maintained as a guided GPT Builder 1.5 project with one canonical eight-step runtime contract.
+
+Active peer distributions:
+
+- ChatGPT Chat
+- Custom GPT
+- Claude Projects
+- OpenCode
+
+OpenAI Plugin is assessed as reduced/inactive.
+
+A release builds Project, Chat, Custom GPT, Claude and OpenCode ZIP packages plus `SHA256SUMS.txt` and `DELIVERY-MANIFEST.json`. Runtime parity, release readiness, project hygiene, workflow parity and reproducible release verification are blocking quality gates.
