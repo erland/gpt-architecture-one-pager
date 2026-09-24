@@ -9,7 +9,7 @@
 - [x] Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt
 - [x] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
 - [x] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
-- [ ] Steg 4 – Runtime parity och modern releaseleverans
+- [x] Steg 4 – Runtime parity och modern releaseleverans
 - [ ] Steg 5 – Slutregression, hygiene och reproducerbar release
 
 ## Runtime-bedömning
@@ -42,6 +42,10 @@ CI passerade GPT Builder-testmanifestet och kontraktsvalidatorn tillsammans med 
 
 CI passerade Claude Projects- och OpenCode-distributionerna tillsammans med befintliga Chat/Custom-paket, GPT Builder-testkontraktet och alla 12 runtime-regressioner. Båda peer-runtimes använder samma canonical åttastegsinstruktion. Knowledge och examples är supporting references och persistent state krävs inte. OpenAI Plugin är slutligt bedömd som reduced/inactive eftersom den inte tillför en meningsfull peer-runtime för den här huvudsakligen instruktionsdrivna produkten.
 
+## Verifiering av steg 4
+
+CI passerade runtime parity för alla fem bedömda runtimes. Aktiva peers är ChatGPT Chat, Custom GPT, Claude Projects och OpenCode; OpenAI Plugin är reduced/inactive. Releaseleveransen bygger nu Project ZIP samt fyra runtime-ZIP:ar, SHA256SUMS.txt och DELIVERY-MANIFEST.json. Release readiness verifierar hela leveransen.
+
 ## Aktuellt steg
 
-**Steg 4 – Runtime parity och modern releaseleverans.**
+**Steg 5 – Slutregression, hygiene och reproducerbar release.**
