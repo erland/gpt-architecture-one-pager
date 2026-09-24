@@ -4,7 +4,7 @@ import argparse, hashlib, json, re, zipfile
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-SEMVER=re.compile(r"^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$")
+SEMVER=re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
 CANONICAL=ROOT/"gpt-configuration/gpt-instructions.txt"
 KNOWLEDGE=sorted((ROOT/"knowledge").glob("*.md"))
 EXAMPLES=sorted((ROOT/"examples").glob("*.md"))
