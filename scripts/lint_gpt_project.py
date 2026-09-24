@@ -54,6 +54,11 @@ check(opencode.get("runtime_root")==".opencode/architecture-one-pager","OpenCode
 check(runtime.get("openai_plugin",{}).get("enabled") is False,"OpenAI Plugin must remain inactive")
 check(runtime.get("openai_plugin",{}).get("role")=="assessed_reduced","OpenAI Plugin assessment must remain reduced")
 
+parity=cfg.get("runtime_parity",{})
+check(parity.get("model")=="runtime-parity.yaml","runtime parity model not registered")
+check(set(parity.get("registered_runtimes",[]))==expected,"runtime parity must register all five runtimes")
+check(set(parity.get("compared_categories",[]))=={"behavior","capability","artifact","workspace_state","tool"},"runtime parity categories differ")
+
 testing=cfg.get("testing",{})
 check(testing.get("manifest")=="tests/test-manifest.yaml","GPT Builder test manifest not registered")
 check(testing.get("manifest_schema")=="schemas/test-manifest.schema.json","test manifest schema not registered")
@@ -68,6 +73,15 @@ for rel in [
     "scripts/validate_gpt_builder_tests.py",
     "scripts/build_peer_distributions.py",
     "scripts/validate_peer_distributions.py",
+    "runtime-parity.yaml",
+    "runtime-contracts/chatgpt-chat.json",
+    "runtime-contracts/chatgpt-custom.json",
+    "runtime-contracts/claude-project.json",
+    "runtime-contracts/opencode.json",
+    "scripts/build_project_package.py",
+    "scripts/build_delivery_metadata.py",
+    "scripts/validate_runtime_parity.py",
+    "scripts/validate_release_readiness.py",
     "schemas/capability-contract.schema.json",
     "schemas/artifact-contract.schema.json",
     "schemas/workspace-state-contract.schema.json",
