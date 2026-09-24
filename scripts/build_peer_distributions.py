@@ -41,6 +41,7 @@ def contract(runtime_id:str,version:str,adapter:dict):
 def build_claude(base:Path,version:str):
     project=base/"project"; project.mkdir(parents=True,exist_ok=True)
     copy(CANONICAL,project/"instructions.md"); copy_refs(project)
+    copy(ROOT/"runtime-contracts/claude-project.json", project/"platform-contract.json")
     (project/"runtime-contract.json").write_text(json.dumps(contract("claude_project",version,{
       "mode":"claude_project","project_instructions":True,"project_knowledge":True,
       "web_research":"available_when_runtime_supports_it","persistent_state_required":False
@@ -51,6 +52,7 @@ def build_claude(base:Path,version:str):
 def build_opencode(base:Path,version:str):
     runtime=base/".opencode"/"architecture-one-pager"; runtime.mkdir(parents=True,exist_ok=True)
     copy(CANONICAL,runtime/"instructions.md"); copy_refs(runtime)
+    copy(ROOT/"runtime-contracts/opencode.json", runtime/"platform-contract.json")
     (runtime/"runtime-contract.json").write_text(json.dumps(contract("opencode",version,{
       "mode":"opencode_workspace","native_filesystem":True,"native_shell":True,
       "assistant_runtime_root":".opencode/architecture-one-pager","persistent_state_required":False,
