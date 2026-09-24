@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "behavior": {
+    "canonical": "gpt-configuration/gpt-instructions.txt",
+    "guided": true,
+    "persistent_state_required": false
+  },
+  "capabilities": {
+    "web": "recommended",
+    "filesystem_read": "recommended",
+    "filesystem_write": "optional",
+    "shell": "optional",
+    "code_execution": "optional",
+    "structured_data": "optional",
+    "persistent_state": "not_required"
+  },
+  "artifacts": {
+    "one_pager": "required",
+    "markdown_export": "optional",
+    "confluence_export": "optional",
+    "pdf_export": "optional",
+    "word_export": "optional",
+    "runtime_package": "required",
+    "project_package": "required"
+  },
+  "workspace_state": {
+    "workspace": "optional",
+    "separate_from_assistant": true,
+    "state": "not_required",
+    "authority": "conversation"
+  },
+  "tools": {
+    "distribution_validation": "required",
+    "runtime_regression": "required"
+  },
+  "runtime_id": "claude_project",
+  "adapter": {
+    "mode": "claude_project",
+    "entrypoint": "project/instructions.md"
+  }
+}
