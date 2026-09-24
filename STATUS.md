@@ -7,7 +7,7 @@
 ## Migrationssteg
 
 - [x] Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt
-- [ ] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
+- [x] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
 - [ ] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
 - [ ] Steg 4 – Runtime parity och modern releaseleverans
 - [ ] Steg 5 – Slutregression, hygiene och reproducerbar release
@@ -34,6 +34,10 @@ Projektet är `guided`, inte `stateful`.
 
 CI passerade den nya GPT Builder 1.5-linten tillsammans med befintliga reproducerbara Chat/Custom-byggen, semantisk distributionsvalidering, small-model runtime-regressioner och artifact upload. Canonical åttastegsflöde och befintligt one-pager-beteende är oförändrade.
 
+## Verifiering av steg 2
+
+CI passerade GPT Builder-testmanifestet och kontraktsvalidatorn tillsammans med den befintliga distributionsvalidatorn och alla 12 small-model runtime-regressioner. De deterministiska kontraktssviterna är blockerande. Live Luna/Sol eller andra runtime-körningar hålls separat som manuella runtime-evals och blandas inte ihop med statisk kontraktsvalidering.
+
 ## Aktuellt steg
 
-**Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen.**
+**Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning.**
