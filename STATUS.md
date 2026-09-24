@@ -8,7 +8,7 @@
 
 - [x] Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt
 - [x] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
-- [ ] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
+- [x] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
 - [ ] Steg 4 – Runtime parity och modern releaseleverans
 - [ ] Steg 5 – Slutregression, hygiene och reproducerbar release
 
@@ -16,8 +16,8 @@
 
 - ChatGPT Chat: ready / active
 - Custom GPT: ready / active
-- Claude Projects: ready / planned
-- OpenCode: ready / planned
+- Claude Projects: ready / active
+- OpenCode: ready / active
 - OpenAI Plugin: reduced / inactive
 
 ## Robusthetsprofil
@@ -38,6 +38,10 @@ CI passerade den nya GPT Builder 1.5-linten tillsammans med befintliga reproduce
 
 CI passerade GPT Builder-testmanifestet och kontraktsvalidatorn tillsammans med den befintliga distributionsvalidatorn och alla 12 small-model runtime-regressioner. De deterministiska kontraktssviterna är blockerande. Live Luna/Sol eller andra runtime-körningar hålls separat som manuella runtime-evals och blandas inte ihop med statisk kontraktsvalidering.
 
+## Verifiering av steg 3
+
+CI passerade Claude Projects- och OpenCode-distributionerna tillsammans med befintliga Chat/Custom-paket, GPT Builder-testkontraktet och alla 12 runtime-regressioner. Båda peer-runtimes använder samma canonical åttastegsinstruktion. Knowledge och examples är supporting references och persistent state krävs inte. OpenAI Plugin är slutligt bedömd som reduced/inactive eftersom den inte tillför en meningsfull peer-runtime för den här huvudsakligen instruktionsdrivna produkten.
+
 ## Aktuellt steg
 
-**Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning.**
+**Steg 4 – Runtime parity och modern releaseleverans.**
