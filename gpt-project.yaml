@@ -185,13 +185,25 @@ runtime:
       max_files: 20
       strategy: identical
   claude:
-    enabled: false
-    role: assessed_ready
-    planned_step: 3
+    enabled: true
+    role: peer_distribution
+    mode: claude_project
+    builder: scripts/build_peer_distributions.py
+    validator: scripts/validate_peer_distributions.py
+    project:
+      instructions: project/instructions.md
+      knowledge: project/knowledge
+      examples: project/examples
+      runtime_contract: project/runtime-contract.json
   opencode:
-    enabled: false
-    role: assessed_ready
-    planned_step: 3
+    enabled: true
+    role: peer_distribution
+    mode: opencode_workspace
+    builder: scripts/build_peer_distributions.py
+    validator: scripts/validate_peer_distributions.py
+    instructions: AGENTS.md
+    runtime_root: .opencode/architecture-one-pager
+    runtime_contract: .opencode/architecture-one-pager/runtime-contract.json
   openai_plugin:
     enabled: false
     role: assessed_reduced
