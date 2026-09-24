@@ -7,14 +7,15 @@ plan:
   path: docs/gpt-builder-1.5-migration-plan.md
   total_steps: 5
 progress:
-  current_phase: gpt-builder-1.5-conversion
+  current_phase: maintenance
   current_step: 5
-  last_completed_step: 4
+  last_completed_step: 5
   completed_steps:
     - 1
     - 2
     - 3
     - 4
+    - 5
   skipped_steps: []
 state:
   overall: pass
@@ -22,11 +23,26 @@ state:
   warnings: []
 validation:
   last_result: pass
-  details: GPT Builder guided lint, testkontrakt, Chat/Custom/Claude/OpenCode, Project ZIP, runtime parity, delivery metadata, release readiness, 12 runtime-regressioner och artifact upload passerade.
+  details: GPT Builder guided lint, testkontrakt, Chat/Custom/Claude/OpenCode, Project ZIP, runtime parity, release readiness, 12 runtime-regressioner, final project hygiene, workflow parity och reproducerbar release passerade.
+project_hygiene:
+  last_result: pass
+  details: Genererade dist/build/cache/temp-artefakter ignoreras och är inte versionshanterade.
+release:
+  state: ready
+  version: 1.0.0
+  artifacts:
+    - project_zip
+    - chat_zip
+    - custom_gpt_zip
+    - claude_zip
+    - opencode_zip
+    - sha256_checksums
+    - delivery_manifest
+  note: GPT Builder 1.5.0-konverteringen är klar och PR:n är redo att mergeas.
 next_step:
-  recommended: 5
-  title: Slutregression, hygiene och reproducerbar release
-  reason: Runtime parity och komplett releaseleverans är CI-verifierade; återstår final hygiene, workflow parity och reproducerbarhet.
+  recommended: null
+  title: Maintenance
+  reason: Alla konverteringssteg 1–5 är klara och verifierade.
 resume:
   supported: true
   required_files:
@@ -35,7 +51,4 @@ resume:
     - docs/gpt-builder-1.5-migration-plan.md
     - STATUS.md
     - PROJECT.md
-  human_readable_status: Steg 4 är klart och CI-verifierat. Fortsätt med steg 5.
-release:
-  state: stable_before_conversion
-  version: 1.0.0
+  human_readable_status: Konverteringen till GPT Byggaren 1.5.0 är klar. Projektet är i maintenance-läge.
