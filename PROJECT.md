@@ -24,8 +24,8 @@ Skäl:
 Runtime-mål:
 - ChatGPT Chat – ready / active
 - Custom GPT – ready / active
-- Claude Projects – ready / planned
-- OpenCode – ready / planned
+- Claude Projects – ready / active
+- OpenCode – ready / active
 - OpenAI Plugin – reduced / inactive
 
 Migreringsplan: `docs/gpt-builder-1.5-migration-plan.md`.
