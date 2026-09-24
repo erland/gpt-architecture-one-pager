@@ -42,6 +42,18 @@ canonical=(ROOT/"gpt-configuration/gpt-instructions.txt").read_text(encoding="ut
 for marker in core.get("required_markers",[]):
     check(marker in canonical,f"canonical instruction missing marker: {marker}")
 
+runtime=cfg.get("runtime",{})
+claude=runtime.get("claude",{})
+opencode=runtime.get("opencode",{})
+check(claude.get("enabled") is True,"Claude peer runtime must be enabled")
+check(claude.get("mode")=="claude_project","Claude runtime mode must be claude_project")
+check(claude.get("project",{}).get("instructions")=="project/instructions.md","Claude instructions path drift")
+check(opencode.get("enabled") is True,"OpenCode peer runtime must be enabled")
+check(opencode.get("mode")=="opencode_workspace","OpenCode runtime mode must be opencode_workspace")
+check(opencode.get("runtime_root")==".opencode/architecture-one-pager","OpenCode runtime root drift")
+check(runtime.get("openai_plugin",{}).get("enabled") is False,"OpenAI Plugin must remain inactive")
+check(runtime.get("openai_plugin",{}).get("role")=="assessed_reduced","OpenAI Plugin assessment must remain reduced")
+
 testing=cfg.get("testing",{})
 check(testing.get("manifest")=="tests/test-manifest.yaml","GPT Builder test manifest not registered")
 check(testing.get("manifest_schema")=="schemas/test-manifest.schema.json","test manifest schema not registered")
@@ -54,6 +66,8 @@ for rel in [
     "schemas/test-manifest.schema.json",
     "tests/test-manifest.yaml",
     "scripts/validate_gpt_builder_tests.py",
+    "scripts/build_peer_distributions.py",
+    "scripts/validate_peer_distributions.py",
     "schemas/capability-contract.schema.json",
     "schemas/artifact-contract.schema.json",
     "schemas/workspace-state-contract.schema.json",
