@@ -26,7 +26,7 @@ def main():
         with zipfile.ZipFile(p) as z:
             if z.testzip() is not None: raise SystemExit(f"Corrupt ZIP: {p}")
     with zipfile.ZipFile(paths["claude"]) as z:
-        req={"README.md","VERSION","MANIFEST.json","project/instructions.md","project/runtime-contract.json"}
+        req={"README.md","VERSION","MANIFEST.json","project/instructions.md","project/runtime-contract.json","project/platform-contract.json"}
         req|={f"project/knowledge/{p.name}" for p in KNOWLEDGE}
         req|={f"project/examples/{p.name}" for p in EXAMPLES}
         if set(z.namelist())!=req: raise SystemExit(f"Claude content differs: {sorted(set(z.namelist())^req)}")
@@ -36,7 +36,7 @@ def main():
         if c.get("workspace_state",{}).get("state",{}).get("requirement")!="not_required": raise SystemExit("Claude state contract drift")
         verify_manifest(z,"claude_project",version)
     with zipfile.ZipFile(paths["opencode"]) as z:
-        req={"AGENTS.md","opencode.json","README.md","VERSION","MANIFEST.json",".opencode/architecture-one-pager/instructions.md",".opencode/architecture-one-pager/runtime-contract.json"}
+        req={"AGENTS.md","opencode.json","README.md","VERSION","MANIFEST.json",".opencode/architecture-one-pager/instructions.md",".opencode/architecture-one-pager/runtime-contract.json",".opencode/architecture-one-pager/platform-contract.json"}
         req|={f".opencode/architecture-one-pager/knowledge/{p.name}" for p in KNOWLEDGE}
         req|={f".opencode/architecture-one-pager/examples/{p.name}" for p in EXAMPLES}
         if set(z.namelist())!=req: raise SystemExit(f"OpenCode content differs: {sorted(set(z.namelist())^req)}")
