@@ -55,6 +55,12 @@ jobs:
       - name: Validate distributions
         run: python3 scripts/validate_distributions.py --version '${{ steps.version.outputs.version }}'
 
+      - name: Build Claude and OpenCode distributions
+        run: python3 scripts/build_peer_distributions.py --version '${{ steps.version.outputs.version }}'
+
+      - name: Validate Claude and OpenCode distributions
+        run: python3 scripts/validate_peer_distributions.py --version '${{ steps.version.outputs.version }}'
+
       - name: Validate runtime regressions
         run: python3 scripts/validate_runtime_regressions.py
 
