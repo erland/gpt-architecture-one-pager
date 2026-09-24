@@ -6,7 +6,7 @@
 
 ## Migrationssteg
 
-- [ ] Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt
+- [x] Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt
 - [ ] Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen
 - [ ] Steg 3 – Claude/OpenCode peer-distributioner och runtime-bedömning
 - [ ] Steg 4 – Runtime parity och modern releaseleverans
@@ -30,8 +30,10 @@ Projektet är `guided`, inte `stateful`.
 - persistent state är inte nödvändigt,
 - current-information-check styr när webb/färska källor behövs.
 
+## Verifiering av steg 1
+
+CI passerade den nya GPT Builder 1.5-linten tillsammans med befintliga reproducerbara Chat/Custom-byggen, semantisk distributionsvalidering, small-model runtime-regressioner och artifact upload. Canonical åttastegsflöde och befintligt one-pager-beteende är oförändrade.
+
 ## Aktuellt steg
 
-**Steg 1 – Guided 1.5-projektmodell och plattformsneutrala kontrakt.**
-
-Steget markeras klart först när ny projektlint och hela befintliga build/validation/regression-kedjan passerar.
+**Steg 2 – Registrera befintliga regressioner i GPT Builder-testmodellen.**
