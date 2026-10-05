@@ -151,7 +151,8 @@ Active peer distributions:
 - Custom GPT
 - Claude Projects
 - OpenCode
+- OpenAI Plugin
 
-OpenAI Plugin is assessed as reduced/inactive.
+OpenAI Plugin is a skills-first equivalent peer runtime. The canonical eight-step workflow is embedded in the skill; Knowledge and examples are packaged as optional references. No persistent state, runtime scripts or MCP interface are required for core behavior.
 
-A release builds Project, Chat, Custom GPT, Claude and OpenCode ZIP packages plus `SHA256SUMS.txt` and `DELIVERY-MANIFEST.json`. Runtime parity, release readiness, project hygiene, workflow parity and reproducible release verification are blocking quality gates.
+A release builds Project, Chat, Custom GPT, Claude, OpenCode and OpenAI Plugin ZIP packages plus `SHA256SUMS.txt` and `DELIVERY-MANIFEST.json`. Runtime parity, release readiness, project hygiene, workflow parity and reproducible release verification are blocking quality gates.
