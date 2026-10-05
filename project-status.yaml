@@ -23,7 +23,7 @@ state:
   warnings: []
 validation:
   last_result: pass
-  details: GPT Builder guided lint, testkontrakt, Chat/Custom/Claude/OpenCode, Project ZIP, runtime parity, release readiness, 12 runtime-regressioner, final project hygiene, workflow parity och reproducerbar release passerade.
+  details: GPT Builder guided lint, testkontrakt, Chat/Custom/Claude/OpenCode/OpenAI Plugin, Project ZIP, runtime parity, release readiness, 12 runtime-regressioner, final project hygiene, workflow parity och reproducerbar release passerar för fem aktiva peer runtimes.
 project_hygiene:
   last_result: pass
   details: Genererade dist/build/cache/temp-artefakter ignoreras och är inte versionshanterade.
@@ -36,6 +36,7 @@ release:
     - custom_gpt_zip
     - claude_zip
     - opencode_zip
+    - plugin_zip
     - sha256_checksums
     - delivery_manifest
   note: GPT Builder 1.5.0-konverteringen är klar och PR:n är redo att mergeas.
