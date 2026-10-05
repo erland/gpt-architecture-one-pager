@@ -27,7 +27,10 @@ check(candidates.get("chatgpt_chat",{}).get("suitability")=="ready","Chat must b
 check(candidates.get("chatgpt_custom",{}).get("suitability")=="ready","Custom GPT must be ready")
 check(candidates.get("claude_project",{}).get("suitability")=="ready","Claude must be assessed ready")
 check(candidates.get("opencode",{}).get("suitability")=="ready","OpenCode must be assessed ready")
-check(candidates.get("openai_plugin",{}).get("suitability")=="reduced","Plugin must be assessed reduced")
+check(candidates.get("openai_plugin",{}).get("suitability")=="ready","Plugin must be assessed ready")
+
+tool_contract=cfg.get("tools",{})
+check(tool_contract.get("tools")==[],"Architecture One Pager must not declare build/test scripts as runtime tools")
 
 ws=cfg.get("workspace_state",{})
 check(ws.get("state",{}).get("requirement")=="not_required","persistent state must remain not_required")
@@ -51,8 +54,8 @@ check(claude.get("project",{}).get("instructions")=="project/instructions.md","C
 check(opencode.get("enabled") is True,"OpenCode peer runtime must be enabled")
 check(opencode.get("mode")=="opencode_workspace","OpenCode runtime mode must be opencode_workspace")
 check(opencode.get("runtime_root")==".opencode/architecture-one-pager","OpenCode runtime root drift")
-check(runtime.get("openai_plugin",{}).get("enabled") is False,"OpenAI Plugin must remain inactive")
-check(runtime.get("openai_plugin",{}).get("role")=="assessed_reduced","OpenAI Plugin assessment must remain reduced")
+check(runtime.get("openai_plugin",{}).get("enabled") is True,"OpenAI Plugin must be active")
+check(runtime.get("openai_plugin",{}).get("role")=="peer_distribution","OpenAI Plugin role must be peer_distribution")
 
 parity=cfg.get("runtime_parity",{})
 check(parity.get("model")=="runtime-parity.yaml","runtime parity model not registered")
@@ -78,6 +81,7 @@ for rel in [
     "runtime-contracts/chatgpt-custom.json",
     "runtime-contracts/claude-project.json",
     "runtime-contracts/opencode.json",
+    "runtime-contracts/openai-plugin.json",
     "scripts/build_project_package.py",
     "scripts/build_delivery_metadata.py",
     "scripts/validate_runtime_parity.py",

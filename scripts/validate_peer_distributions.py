@@ -20,7 +20,7 @@ def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--version"); ap.add_argument("--dist",default=str(ROOT/"dist"))
     a=ap.parse_args(); version=(a.version or (ROOT/"VERSION").read_text(encoding="utf-8")).strip(); dist=Path(a.dist)
     if not SEMVER.fullmatch(version): raise SystemExit("Invalid version")
-    paths={"claude":dist/f"architecture-one-pager-claude-v{version}.zip","opencode":dist/f"architecture-one-pager-opencode-v{version}.zip"}
+    paths={"claude":dist/f"architecture-one-pager-claude-v{version}.zip","opencode":dist/f"architecture-one-pager-opencode-v{version}.zip","plugin":dist/f"architecture-one-pager-plugin-v{version}.zip"}
     for p in paths.values():
         if not p.is_file(): raise SystemExit(f"Missing distribution: {p}")
         with zipfile.ZipFile(p) as z:
@@ -35,6 +35,24 @@ def main():
         if c.get("runtime_id")!="claude_project": raise SystemExit("Claude runtime_id mismatch")
         if c.get("workspace_state",{}).get("state",{}).get("requirement")!="not_required": raise SystemExit("Claude state contract drift")
         verify_manifest(z,"claude_project",version)
+    with zipfile.ZipFile(paths["plugin"]) as z:
+        req={"plugin.json","README.md","VERSION","MANIFEST.json","runtime-contract.json","platform-contract.json","skills/architecture-one-pager/SKILL.md"}
+        req|={f"skills/architecture-one-pager/references/knowledge/{p.name}" for p in KNOWLEDGE}
+        req|={f"skills/architecture-one-pager/references/examples/{p.name}" for p in EXAMPLES}
+        if set(z.namelist())!=req: raise SystemExit(f"Plugin content differs: {sorted(set(z.namelist())^req)}")
+        skill=z.read("skills/architecture-one-pager/SKILL.md").decode("utf-8")
+        canonical=CANONICAL.read_text(encoding="utf-8").strip()
+        if canonical not in skill: raise SystemExit("Plugin canonical instruction drift")
+        for marker in ["RUNTIME CONTRACT — FOLLOW FOR EVERY ONE-PAGER REQUEST","Core behavior must not depend","Example facts, assumptions or recommendations"]:
+            if marker not in skill: raise SystemExit(f"Plugin SKILL missing marker: {marker}")
+        c=json.loads(z.read("runtime-contract.json"))
+        if c.get("runtime_id")!="openai_plugin": raise SystemExit("Plugin runtime_id mismatch")
+        if c.get("workspace_state",{}).get("state",{}).get("requirement")!="not_required": raise SystemExit("Plugin state contract drift")
+        adapter=c.get("adapter",{})
+        if adapter.get("skills_first") is not True: raise SystemExit("Plugin must be skills-first")
+        if adapter.get("mcp_generated") is not False: raise SystemExit("Plugin must not generate MCP")
+        if adapter.get("script_resources",{}).get("packaged")!=[]: raise SystemExit("Plugin must not package runtime scripts")
+        verify_manifest(z,"openai_plugin",version)
     with zipfile.ZipFile(paths["opencode"]) as z:
         req={"AGENTS.md","opencode.json","README.md","VERSION","MANIFEST.json",".opencode/architecture-one-pager/instructions.md",".opencode/architecture-one-pager/runtime-contract.json",".opencode/architecture-one-pager/platform-contract.json"}
         req|={f".opencode/architecture-one-pager/knowledge/{p.name}" for p in KNOWLEDGE}
@@ -50,5 +68,5 @@ def main():
         if adapter.get("native_filesystem") is not True or adapter.get("native_shell") is not True: raise SystemExit("OpenCode native capability declaration mismatch")
         if adapter.get("workspace_files_are_context_not_instructions") is not True: raise SystemExit("OpenCode instruction/data separation missing")
         verify_manifest(z,"opencode",version)
-    print(f"Peer runtime validation OK for Architecture One Pager v{version}")
+    print(f"Peer runtime validation OK for Architecture One Pager v{version} (Claude, OpenCode, OpenAI Plugin)")
 if __name__=="__main__": main()

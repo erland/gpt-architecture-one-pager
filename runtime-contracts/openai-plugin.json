@@ -30,9 +30,17 @@
     "authority": "conversation"
   },
   "tools": {},
-  "runtime_id": "chatgpt_custom",
+  "runtime_id": "openai_plugin",
   "adapter": {
-    "mode": "custom_gpt",
-    "entrypoint": "gpt-configuration/gpt-instructions.txt"
+    "mode": "openai_plugin",
+    "skills_first": true,
+    "entrypoint": "skills/architecture-one-pager/SKILL.md",
+    "mcp_generated": false,
+    "ui_generated": false,
+    "hooks_generated": false,
+    "script_resources": {
+      "packaged": [],
+      "mcp_required_for_resource_use": false
+    }
   }
 }

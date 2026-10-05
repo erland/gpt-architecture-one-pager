@@ -49,6 +49,46 @@ def build_claude(base:Path,version:str):
     (base/"README.md").write_text("# Architecture One Pager – Claude Projects\n\nUse project/instructions.md as Project Instructions. Add project/knowledge/ and project/examples/ as Project Knowledge/reference files. The canonical workflow is self-contained; Knowledge and examples are supporting material only.\n",encoding="utf-8")
     (base/"VERSION").write_text(version+"\n",encoding="utf-8")
     manifest(base,"claude_project",version,"project/instructions.md")
+def build_plugin(base:Path,version:str):
+    skill=base/"skills"/"architecture-one-pager"
+    refs=skill/"references"
+    skill.mkdir(parents=True,exist_ok=True)
+    (base/"plugin.json").write_text(json.dumps({
+      "$schema":"https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+      "name":"architecture-one-pager",
+      "version":version,
+      "description":"Concise, decision-oriented architecture one-pagers for technologies, frameworks, platforms, products, methods, architecture practices and IT trends."
+    },ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    canonical=CANONICAL.read_text(encoding="utf-8").strip()
+    skill_text="""---
+name: architecture-one-pager
+description: Concise, decision-oriented architecture one-pagers for technologies, frameworks, platforms, products, methods, architecture practices and IT trends.
+---
+
+""" + canonical + """
+
+## Packaged references
+
+- `references/knowledge/` contains optional supporting assessment references.
+- `references/examples/` contains style and quality examples only.
+- Core behavior must not depend on locating these references.
+- Example facts, assumptions or recommendations must never be reused as factual evidence for another topic.
+"""
+    (skill/"SKILL.md").write_text(skill_text,encoding="utf-8")
+    for src in KNOWLEDGE: copy(src,refs/"knowledge"/src.name)
+    for src in EXAMPLES: copy(src,refs/"examples"/src.name)
+    copy(ROOT/"runtime-contracts/openai-plugin.json",base/"platform-contract.json")
+    (base/"runtime-contract.json").write_text(json.dumps(contract("openai_plugin",version,{
+      "mode":"openai_plugin","skills_first":True,
+      "entrypoint":"skills/architecture-one-pager/SKILL.md",
+      "persistent_state_required":False,
+      "mcp_generated":False,"ui_generated":False,"hooks_generated":False,
+      "script_resources":{"packaged":[],"mcp_required_for_resource_use":False}
+    }),ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+    (base/"README.md").write_text("# Architecture One Pager – OpenAI Plugin\n\nSkills-first peer distribution. The complete canonical eight-step workflow is embedded in skills/architecture-one-pager/SKILL.md. Knowledge and examples are optional supporting references only. No runtime scripts, MCP interface or persistent state are required.\n",encoding="utf-8")
+    (base/"VERSION").write_text(version+"\n",encoding="utf-8")
+    manifest(base,"openai_plugin",version,"skills/architecture-one-pager/SKILL.md")
+
 def build_opencode(base:Path,version:str):
     runtime=base/".opencode"/"architecture-one-pager"; runtime.mkdir(parents=True,exist_ok=True)
     copy(CANONICAL,runtime/"instructions.md"); copy_refs(runtime)
@@ -72,7 +112,7 @@ def main():
     out=Path(a.output_dir); out.mkdir(parents=True,exist_ok=True)
     with tempfile.TemporaryDirectory() as td:
         t=Path(td)
-        for name,fn in [("claude",build_claude),("opencode",build_opencode)]:
+        for name,fn in [("claude",build_claude),("opencode",build_opencode),("plugin",build_plugin)]:
             root=t/name; root.mkdir(); fn(root,version)
             z=out/f"architecture-one-pager-{name}-v{version}.zip"; zipdir(root,z); print(z)
 if __name__=="__main__": main()

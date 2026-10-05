@@ -27,9 +27,9 @@ analysis:
         activate_by_default: true
         reason: The canonical workflow can run directly in a workspace; local tools are optional rather than required for core behavior.
       - runtime_id: openai_plugin
-        suitability: reduced
-        activate_by_default: false
-        reason: Skills can carry methodology but add little value because the core product is primarily an instruction-driven one-pager workflow.
+        suitability: ready
+        activate_by_default: true
+        reason: The instruction-driven guided workflow maps directly to a skills-first Plugin; no persistent state or runtime tools are required for core behavior.
 
 model_robustness:
   level: guided
@@ -157,21 +157,7 @@ workspace_state:
 tools:
   contract_version: 1
   schema: schemas/tool-contract.schema.json
-  tools:
-    - id: distribution-validation
-      type: script
-      requirement: required
-      purpose: Validate canonical workflow markers, runtime package integrity and semantic parity.
-      script: scripts/validate_distributions.py
-      deterministic: true
-      mutates_workspace: false
-    - id: runtime-regression
-      type: script
-      requirement: required
-      purpose: Validate lightweight-model behavioral guardrails against the canonical instruction contract.
-      script: scripts/validate_runtime_regressions.py
-      deterministic: true
-      mutates_workspace: false
+  tools: []
 
 runtime:
   primary: none
@@ -205,8 +191,13 @@ runtime:
     runtime_root: .opencode/architecture-one-pager
     runtime_contract: .opencode/architecture-one-pager/runtime-contract.json
   openai_plugin:
-    enabled: false
-    role: assessed_reduced
+    enabled: true
+    role: peer_distribution
+    mode: skills_first
+    builder: scripts/build_peer_distributions.py
+    validator: scripts/validate_peer_distributions.py
+    instructions: skills/architecture-one-pager/SKILL.md
+    runtime_contract: runtime-contract.json
 
 ci:
   enabled: true
