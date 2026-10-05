@@ -17,6 +17,7 @@ for rid,path in contracts.items():
     if d.get("runtime_id")!=rid: errors.append(rid+" runtime_id mismatch")
     if d.get("behavior",{}).get("canonical")!="gpt-configuration/gpt-instructions.txt": errors.append(rid+" canonical drift")
     if d.get("behavior",{}).get("persistent_state_required") is not False: errors.append(rid+" state drift")
+    if d.get("tools")!={}: errors.append(rid+" runtime tools must remain empty")
 if errors:
     print("RUNTIME PARITY: FAIL"); [print("-",e) for e in errors]; sys.exit(1)
 print("RUNTIME PARITY: PASS")
