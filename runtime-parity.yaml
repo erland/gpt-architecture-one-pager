@@ -30,6 +30,6 @@ runtimes:
     active: true
     contract: runtime-contracts/opencode.json
   openai_plugin:
-    suitability: reduced
-    active: false
-    reason: Skills can carry the method, but the product is primarily an instruction-driven one-pager workflow and gains little from a plugin runtime.
+    suitability: ready
+    active: true
+    contract: runtime-contracts/openai-plugin.json
