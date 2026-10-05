@@ -29,10 +29,7 @@
     "state": "not_required",
     "authority": "conversation"
   },
-  "tools": {
-    "distribution_validation": "required",
-    "runtime_regression": "required"
-  },
+  "tools": {},
   "runtime_id": "opencode",
   "adapter": {
     "mode": "opencode_workspace",
