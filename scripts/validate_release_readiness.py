@@ -12,6 +12,7 @@ def main():
       dist/f"architecture-one-pager-chat-v{version}.zip",
       dist/f"architecture-one-pager-claude-v{version}.zip",
       dist/f"architecture-one-pager-opencode-v{version}.zip",
+      dist/f"architecture-one-pager-plugin-v{version}.zip",
     ]
     for p in arts:
         if not p.exists(): errors.append("missing "+p.name); continue
@@ -24,7 +25,7 @@ def main():
     if not dm.exists(): errors.append("delivery manifest missing")
     else:
         types={x.get("type") for x in json.loads(dm.read_text(encoding="utf-8")).get("artifacts",[])}
-        if types!={"project_zip","custom_gpt_zip","chat_zip","claude_zip","opencode_zip"}: errors.append("delivery types differ")
+        if types!={"project_zip","custom_gpt_zip","chat_zip","claude_zip","opencode_zip","plugin_zip"}: errors.append("delivery types differ")
     if not sums.exists(): errors.append("checksums missing")
     else:
         got={}
