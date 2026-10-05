@@ -26,7 +26,7 @@ Registrera de befintliga 12 runtime-regressionerna och distributionsvalidatorern
 
 ## Steg 3 – Peer-distributioner
 
-Bygg Claude Projects och OpenCode från samma canonical instruktion och supporting references. Bekräfta slutlig bedömning av OpenAI Plugin.
+Bygg Claude Projects, OpenCode och OpenAI Plugin från samma canonical instruktion och supporting references. OpenAI Plugin är skills-first och equivalent eftersom kärnbeteendet inte kräver runtime-tools eller persistent state.
 
 ## Steg 4 – Runtime parity och modern releaseleverans
 
