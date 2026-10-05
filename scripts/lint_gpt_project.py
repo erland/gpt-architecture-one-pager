@@ -29,6 +29,9 @@ check(candidates.get("claude_project",{}).get("suitability")=="ready","Claude mu
 check(candidates.get("opencode",{}).get("suitability")=="ready","OpenCode must be assessed ready")
 check(candidates.get("openai_plugin",{}).get("suitability")=="ready","Plugin must be assessed ready")
 
+tool_contract=cfg.get("tools",{})
+check(tool_contract.get("tools")==[],"Architecture One Pager must not declare build/test scripts as runtime tools")
+
 ws=cfg.get("workspace_state",{})
 check(ws.get("state",{}).get("requirement")=="not_required","persistent state must remain not_required")
 check(ws.get("state",{}).get("authority")=="conversation","state authority must remain conversation")
