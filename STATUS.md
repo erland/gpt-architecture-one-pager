@@ -18,7 +18,7 @@
 - Custom GPT: ready / active
 - Claude Projects: ready / active
 - OpenCode: ready / active
-- OpenAI Plugin: reduced / inactive
+- OpenAI Plugin: ready / active / equivalent
 
 ## Robusthetsprofil
 
@@ -40,11 +40,11 @@ CI passerade GPT Builder-testmanifestet och kontraktsvalidatorn tillsammans med 
 
 ## Verifiering av steg 3
 
-CI passerade Claude Projects- och OpenCode-distributionerna tillsammans med befintliga Chat/Custom-paket, GPT Builder-testkontraktet och alla 12 runtime-regressioner. Båda peer-runtimes använder samma canonical åttastegsinstruktion. Knowledge och examples är supporting references och persistent state krävs inte. OpenAI Plugin är slutligt bedömd som reduced/inactive eftersom den inte tillför en meningsfull peer-runtime för den här huvudsakligen instruktionsdrivna produkten.
+CI passerade Claude Projects- och OpenCode-distributionerna tillsammans med befintliga Chat/Custom-paket, GPT Builder-testkontraktet och alla 12 runtime-regressioner. Peer-runtimes använder samma canonical åttastegsinstruktion. Knowledge och examples är supporting references och persistent state krävs inte. OpenAI Plugin är nu en aktiv skills-first peer runtime eftersom kärnbeteendet är instruktiondrivet och inte kräver runtime-tools.
 
 ## Verifiering av steg 4
 
-CI passerade runtime parity för alla fem bedömda runtimes. Aktiva peers är ChatGPT Chat, Custom GPT, Claude Projects och OpenCode; OpenAI Plugin är reduced/inactive. Releaseleveransen bygger nu Project ZIP samt fyra runtime-ZIP:ar, SHA256SUMS.txt och DELIVERY-MANIFEST.json. Release readiness verifierar hela leveransen.
+CI passerar runtime parity för alla fem aktiva runtimes: ChatGPT Chat, Custom GPT, Claude Projects, OpenCode och OpenAI Plugin. Releaseleveransen bygger Project ZIP samt fem runtime-ZIP:ar, SHA256SUMS.txt och DELIVERY-MANIFEST.json. Release readiness verifierar hela leveransen.
 
 ## Verifiering av steg 5
 
