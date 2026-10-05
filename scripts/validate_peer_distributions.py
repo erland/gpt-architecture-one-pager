@@ -43,7 +43,7 @@ def main():
         skill=z.read("skills/architecture-one-pager/SKILL.md").decode("utf-8")
         canonical=CANONICAL.read_text(encoding="utf-8").strip()
         if canonical not in skill: raise SystemExit("Plugin canonical instruction drift")
-        for marker in ["eight-step workflow","Core behavior must not depend","Example facts, assumptions or recommendations"]:
+        for marker in ["RUNTIME CONTRACT — FOLLOW FOR EVERY ONE-PAGER REQUEST","Core behavior must not depend","Example facts, assumptions or recommendations"]:
             if marker not in skill: raise SystemExit(f"Plugin SKILL missing marker: {marker}")
         c=json.loads(z.read("runtime-contract.json"))
         if c.get("runtime_id")!="openai_plugin": raise SystemExit("Plugin runtime_id mismatch")
