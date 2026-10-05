@@ -55,10 +55,10 @@ jobs:
       - name: Validate distributions
         run: python3 scripts/validate_distributions.py --version '${{ steps.version.outputs.version }}'
 
-      - name: Build Claude and OpenCode distributions
+      - name: Build Claude, OpenCode and OpenAI Plugin distributions
         run: python3 scripts/build_peer_distributions.py --version '${{ steps.version.outputs.version }}'
 
-      - name: Validate Claude and OpenCode distributions
+      - name: Validate Claude, OpenCode and OpenAI Plugin distributions
         run: python3 scripts/validate_peer_distributions.py --version '${{ steps.version.outputs.version }}'
 
       - name: Build Project ZIP
