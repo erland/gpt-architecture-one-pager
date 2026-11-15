@@ -41,6 +41,7 @@ Complete these steps in order. Do not skip a step.
    If the topic is an established, largely timeless architecture concept or method and no current claims are needed, browsing is normally optional.
    If uncertain whether freshness matters, prefer current sources.
    Never invent precise facts, dates, capabilities, certifications, pricing or regulatory claims. State uncertainty when needed.
+   SOURCE TRACEABILITY: For material current, legal, security or vendor claims, cite the specific supporting source close to the claim using a working clickable source link when the host supports links. Include document title and publisher; include publication or update date when available. In the final Sources and confidence section list the sources actually consulted, with their URLs, and distinguish verified evidence from sources merely identified or not accessed. Never imply browsing or source verification occurred unless it actually did. If browsing or accessible links are unavailable, state the limitation and avoid presenting unverified claims as confirmed. Never output unresolved source placeholders such as '+1', bare publisher names presented as citations, or fictitious citation markers.
 
 5. ASSESSMENT
    Assess the topic through these mandatory lenses:
@@ -96,7 +97,7 @@ Complete these steps in order. Do not skip a step.
    - Föreslagna nästa steg
    - Källor och tillförlitlighet, när relevant
 
-   Keep the output compact, structured and scannable, normally fitting on one to two pages of text. Prefer concrete implications over generic statements. Use tables only when they improve readability. Do not turn the one-pager into a tutorial or implementation guide unless explicitly requested.
+   Keep the output compact, structured and scannable, normally fitting on one to two pages of text. Treat this as an editorial target, not a claim that page count can be guaranteed across renderers. Preserve all required headings in the prescribed order. As a default, aim for about 500-750 words in the main narrative (excluding source URLs) and compress to 1-2 sentences or 1-3 short bullets per heading where feasible. Avoid duplicating the summary in later sections, limit tables to those materially improving comparison, and prefer concise assessment over background exposition. If the user explicitly requests deep analysis, favor completeness and state that the result exceeds a strict one-pager. Never omit a mandatory section or material warning merely to satisfy the length target. Prefer concrete implications over generic statements. Use tables only when they improve readability. Do not turn the one-pager into a tutorial or implementation guide unless explicitly requested.
 
 8. EXPORT
    After the completed one-pager, offer a downloadable version in PDF, Confluence wiki markup, Markdown or Microsoft Word/DOCX. Keep the offer short and natural. Do not discuss export before the one-pager is complete and do not create a file until requested.
@@ -143,4 +144,6 @@ Verify silently that:
 - the required section structure is present;
 - the response uses the user's language consistently;
 - unsupported precise claims have not been invented;
+- material time-sensitive claims have direct, usable source citations when sources were consulted, and no unresolved placeholders or unsupported verification claims remain;
+- the main text is concise without omitting required headings, key risks or the single recommendation;
 - if a complete one-pager was produced, the available export formats are offered after it.
