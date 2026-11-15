@@ -67,6 +67,18 @@ REQUIRED_RUNTIME_RULES = {
     "knowledge-independence": [
         "core behavior must not depend on locating a particular knowledge file",
     ],
+    "source-traceability": [
+        "SOURCE TRACEABILITY",
+        "working clickable source link",
+        "distinguish verified evidence from sources merely identified",
+        "Never output unresolved source placeholders",
+        "Never imply browsing or source verification occurred unless it actually did",
+    ],
+    "compact-output": [
+        "500-750 words",
+        "Preserve all required headings in the prescribed order",
+        "Never omit a mandatory section or material warning",
+    ],
     "export": [
         "After the completed one-pager, offer a downloadable version in PDF, Confluence wiki markup, Markdown or Microsoft Word/DOCX",
         "Do not discuss export before the one-pager is complete",
@@ -200,7 +212,7 @@ def main() -> int:
     validate_runtime_contract(instructions)
     validate_chat_compilation()
     print(f"Runtime regression contract OK: {len(data['cases'])} cases")
-    print("Small-model gates covered: topic, language, classification, freshness, recommendation, org context, public sector, structure, export, chat independence")
+    print("Small-model gates covered: topic, language, classification, freshness, recommendation, org context, public sector, structure, source traceability, compactness, export, chat independence")
     return 0
 
 
