@@ -1,109 +1,408 @@
 #!/usr/bin/env python3
-from pathlib import Path
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
 import sys
-import yaml
+from pathlib import Path
 
-ROOT=Path(__file__).resolve().parents[1]
-errors=[]
+try:
+    import yaml
+except Exception as exc:
+    raise SystemExit("PyYAML is required") from exc
 
-def check(cond,msg):
-    if not cond: errors.append(msg)
+SUSPICIOUS_SUFFIXES = {".tmp", ".temp", ".bak", ".old"}
+SUSPICIOUS_NAMES = {".DS_Store"}
+CACHE_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache"}
+PLACEHOLDER_MARKERS = {"TODO: placeholder", "PLACEHOLDER", "replace this placeholder"}
 
-cfg=yaml.safe_load((ROOT/"gpt-project.yaml").read_text(encoding="utf-8"))
+PATH_KEYS = {
+    "path", "file", "schema", "policy", "model", "template", "script",
+    "workflow", "manifest", "canonical", "canonical_root", "root",
+    "build_script", "validation_script", "report_template",
+    "start_here_template", "delivery_manifest_schema", "manifest_schema",
+    "eval_case_schema", "report_schema"
+}
 
-check(cfg.get("schema_version")==1,"schema_version must be 1")
-check(cfg.get("project",{}).get("id")=="architecture-one-pager","wrong project id")
+def finding(code, severity, message, path=None):
+    d = {"code": code, "severity": severity, "message": message}
+    if path:
+        d["path"] = path
+    return d
 
-rob=cfg.get("model_robustness",{})
-check(rob.get("level")=="guided","model robustness must be guided")
-for key in ["operational_core","explicit_workflow","deterministic_gates","instruction_adherence_evals"]:
-    check(rob.get(key) is True,f"guided robustness flag must be true: {key}")
+def sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
-candidates={x.get("runtime_id"):x for x in cfg.get("analysis",{}).get("runtime",{}).get("candidates",[]) if isinstance(x,dict)}
-expected={"chatgpt_chat","chatgpt_custom","claude_project","opencode","openai_plugin"}
-check(set(candidates)==expected,"all five peer runtimes must be assessed")
+def exists_ref(root: Path, value: str) -> bool:
+    if any(ch in value for ch in "*?[]"):
+        return True
+    return (root / value).exists()
 
-check(candidates.get("chatgpt_chat",{}).get("suitability")=="ready","Chat must be ready")
-check(candidates.get("chatgpt_custom",{}).get("suitability")=="ready","Custom GPT must be ready")
-check(candidates.get("claude_project",{}).get("suitability")=="ready","Claude must be assessed ready")
-check(candidates.get("opencode",{}).get("suitability")=="ready","OpenCode must be assessed ready")
-check(candidates.get("openai_plugin",{}).get("suitability")=="ready","Plugin must be assessed ready")
+def walk_config_paths(obj, prefix=""):
+    results = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            key = f"{prefix}.{k}" if prefix else k
+            if isinstance(v, str) and k in PATH_KEYS:
+                results.append((key, v))
+            elif isinstance(v, (dict, list)):
+                results.extend(walk_config_paths(v, key))
+    elif isinstance(obj, list):
+        for idx, v in enumerate(obj):
+            if isinstance(v, (dict, list)):
+                results.extend(walk_config_paths(v, f"{prefix}[{idx}]"))
+    return results
 
-tool_contract=cfg.get("tools",{})
-check(tool_contract.get("tools")==[],"Architecture One Pager must not declare build/test scripts as runtime tools")
+def lint(root: Path) -> dict:
+    findings = []
+    cfg_path = root / "gpt-project.yaml"
+    if not cfg_path.exists():
+        return {"result": "fail", "summary": {"errors": 1, "warnings": 0, "findings": 1},
+                "findings": [finding("GP001", "error", "Missing gpt-project.yaml")]}
 
-ws=cfg.get("workspace_state",{})
-check(ws.get("state",{}).get("requirement")=="not_required","persistent state must remain not_required")
-check(ws.get("state",{}).get("authority")=="conversation","state authority must remain conversation")
+    try:
+        cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return {"result": "fail", "summary": {"errors": 1, "warnings": 0, "findings": 1},
+                "findings": [finding("GP002", "error", f"Invalid gpt-project.yaml: {exc}", "gpt-project.yaml")]}
 
-instr=cfg.get("instructions",{})
-check(instr.get("canonical")=="gpt-configuration/gpt-instructions.txt","canonical instruction path drift")
-core=instr.get("core_contract",{})
-check(core.get("knowledge_may_not_be_required_for_core_behavior") is True,"core behavior must remain Knowledge-independent")
+    instructions = cfg.get("instructions") or {}
+    if instructions.get("mode") == "modular_skills":
+        try:
+            import importlib.util
+            helper_path = Path(__file__).resolve().parent / "lib/canonical_skill_sources.py"
+            spec = importlib.util.spec_from_file_location("canonical_skill_sources", helper_path)
+            helper = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(helper)
+            definitions = (cfg.get("skills") or {}).get("definitions") or []
+            helper.modules(root, cfg, definitions)
+            if any(str(item.get("source", "")).endswith("/SKILL.md") for item in definitions):
+                findings.append(finding("GPMS002", "error", "Modular Skill source points to a packaging SKILL.md instead of canonical behavior.md"))
+            manifest = root / "portable-skills.json"
+            if manifest.is_file():
+                portable = json.loads(manifest.read_text(encoding="utf-8"))
+                if portable.get("core") == instructions.get("canonical") and instructions.get("canonical") != instructions.get("core"):
+                    findings.append(finding("GPMS003", "error", "Portable skill core points at legacy full instruction instead of modular core"))
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            findings.append(finding("GPMS001", "error", f"Invalid modular Skill sources: {exc}"))
+    instr_ref = cfg.get("instructions", {}).get("canonical")
+    if not instr_ref:
+        findings.append(finding("GP010", "error", "Canonical instruction is not configured"))
+    else:
+        instr_path = root / instr_ref
+        if not instr_path.exists():
+            findings.append(finding("GP011", "error", "Canonical instruction file is missing", instr_ref))
+        else:
+            text = instr_path.read_text(encoding="utf-8").strip()
+            if not text:
+                findings.append(finding("GP012", "error", "Canonical instruction is empty", instr_ref))
+            for marker in PLACEHOLDER_MARKERS:
+                if marker.lower() in text.lower():
+                    findings.append(finding("GP013", "warning", f"Placeholder marker found: {marker}", instr_ref))
+            custom = cfg.get("runtime", {}).get("custom_gpt", {})
+            mode = custom.get("instruction", {}).get("mode")
+            max_chars = custom.get("instruction", {}).get("max_characters")
+            if mode == "identical" and isinstance(max_chars, int) and len(text) > max_chars:
+                findings.append(finding("GP014", "error",
+                    f"Identical Custom GPT instruction exceeds limit: {len(text)} > {max_chars}", instr_ref))
 
-canonical=(ROOT/"gpt-configuration/gpt-instructions.txt").read_text(encoding="utf-8")
-for marker in core.get("required_markers",[]):
-    check(marker in canonical,f"canonical instruction missing marker: {marker}")
+    capabilities = cfg.get("capabilities")
+    if isinstance(capabilities, dict) and "requirements" in capabilities:
+        schema_ref = capabilities.get("schema", "schemas/capability-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP130", "error", "Capability contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(capabilities)
+            except Exception as exc:
+                findings.append(finding("GP131", "error", f"Invalid capability contract: {exc}", "gpt-project.yaml"))
 
-runtime=cfg.get("runtime",{})
-claude=runtime.get("claude",{})
-opencode=runtime.get("opencode",{})
-check(claude.get("enabled") is True,"Claude peer runtime must be enabled")
-check(claude.get("mode")=="claude_project","Claude runtime mode must be claude_project")
-check(claude.get("project",{}).get("instructions")=="project/instructions.md","Claude instructions path drift")
-check(opencode.get("enabled") is True,"OpenCode peer runtime must be enabled")
-check(opencode.get("mode")=="opencode_workspace","OpenCode runtime mode must be opencode_workspace")
-check(opencode.get("runtime_root")==".opencode/architecture-one-pager","OpenCode runtime root drift")
-check(runtime.get("openai_plugin",{}).get("enabled") is True,"OpenAI Plugin must be active")
-check(runtime.get("openai_plugin",{}).get("role")=="peer_distribution","OpenAI Plugin role must be peer_distribution")
+    skills = cfg.get("skills")
+    if isinstance(skills, dict):
+        schema_ref = skills.get("schema", "schemas/skill-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP125", "error", "Skill contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(skills)
+                for skill in skills.get("definitions", []):
+                    for ref_key in ("references", "assets", "scripts"):
+                        for ref in skill.get(ref_key, []) or []:
+                            if not exists_ref(root, ref):
+                                findings.append(finding(
+                                    "GP126", "error",
+                                    f"Canonical skill {skill.get('id', '<unknown>')} references missing {ref_key[:-1]}",
+                                    ref
+                                ))
+            except Exception as exc:
+                findings.append(finding("GP127", "error", f"Invalid skill contract: {exc}", "gpt-project.yaml"))
 
-parity=cfg.get("runtime_parity",{})
-check(parity.get("model")=="runtime-parity.yaml","runtime parity model not registered")
-check(set(parity.get("registered_runtimes",[]))==expected,"runtime parity must register all five runtimes")
-check(set(parity.get("compared_categories",[]))=={"behavior","capability","artifact","workspace_state","tool"},"runtime parity categories differ")
+    artifacts = cfg.get("artifacts")
+    if isinstance(artifacts, dict) and "outputs" in artifacts:
+        schema_ref = artifacts.get("schema", "schemas/artifact-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP140", "error", "Artifact contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(artifacts)
+            except Exception as exc:
+                findings.append(finding("GP141", "error", f"Invalid artifact contract: {exc}", "gpt-project.yaml"))
 
-testing=cfg.get("testing",{})
-check(testing.get("manifest")=="tests/test-manifest.yaml","GPT Builder test manifest not registered")
-check(testing.get("manifest_schema")=="schemas/test-manifest.schema.json","test manifest schema not registered")
-check(testing.get("runtime_cases")=="tests/runtime-regression-cases.json","runtime regression catalog not registered")
-check(testing.get("contract_validator")=="scripts/validate_gpt_builder_tests.py","test contract validator not registered")
-check(testing.get("deterministic_contracts_block_release") is True,"deterministic test contracts must block")
-check(testing.get("live_model_runtime_evals_are_separate") is True,"live model runtime evals must be separate")
+    workspace_state = cfg.get("workspace_state")
+    if isinstance(workspace_state, dict):
+        schema_ref = workspace_state.get("schema", "schemas/workspace-state-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP150", "error", "Workspace/state contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(workspace_state)
+            except Exception as exc:
+                findings.append(finding("GP151", "error", f"Invalid workspace/state contract: {exc}", "gpt-project.yaml"))
 
-for rel in [
-    "schemas/test-manifest.schema.json",
-    "tests/test-manifest.yaml",
-    "scripts/validate_gpt_builder_tests.py",
-    "scripts/build_peer_distributions.py",
-    "scripts/validate_peer_distributions.py",
-    "runtime-parity.yaml",
-    "runtime-contracts/chatgpt-chat.json",
-    "runtime-contracts/chatgpt-custom.json",
-    "runtime-contracts/claude-project.json",
-    "runtime-contracts/opencode.json",
-    "runtime-contracts/openai-plugin.json",
-    "scripts/build_project_package.py",
-    "scripts/build_delivery_metadata.py",
-    "scripts/validate_runtime_parity.py",
-    "scripts/validate_release_readiness.py",
-    "scripts/final_project_hygiene.py",
-    "scripts/validate_workflow_parity.py",
-    "scripts/verify_reproducible_build.py",
-    "schemas/capability-contract.schema.json",
-    "schemas/artifact-contract.schema.json",
-    "schemas/workspace-state-contract.schema.json",
-    "schemas/tool-contract.schema.json",
-    "docs/gpt-builder-1.5-migration-plan.md",
-    "PROJECT.md",
-    "STATUS.md",
-    "project-status.yaml",
-]:
-    check((ROOT/rel).exists(),f"missing GPT Builder file: {rel}")
+    tool_contract = cfg.get("tools")
+    if isinstance(tool_contract, dict):
+        schema_ref = tool_contract.get("schema", "schemas/tool-contract.schema.json")
+        schema_path = root / schema_ref
+        if not schema_path.exists():
+            findings.append(finding("GP160", "error", "Tool contract schema is missing", schema_ref))
+        else:
+            try:
+                import jsonschema
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                jsonschema.Draft202012Validator(schema).validate(tool_contract)
+                for tool in tool_contract.get("tools", []):
+                    if tool.get("type") == "script":
+                        script_ref = tool.get("script")
+                        if script_ref and not exists_ref(root, script_ref):
+                            findings.append(finding("GP161", "error", "Declared runtime tool script does not exist", script_ref))
+            except Exception as exc:
+                findings.append(finding("GP162", "error", f"Invalid tool contract: {exc}", "gpt-project.yaml"))
 
-if errors:
-    print("GPT BUILDER PROJECT LINT: FAIL")
-    for e in errors: print("-",e)
-    sys.exit(1)
+    # New-project runtime completeness. Policy text alone is not sufficient: a faster
+    # reasoning mode must not be able to silently collapse peer evaluation to Chat + Custom GPT.
+    analysis_runtime = cfg.get("analysis", {}).get("runtime")
+    if isinstance(analysis_runtime, dict) and analysis_runtime.get("strategy") == "peer_candidates":
+        candidates = analysis_runtime.get("candidates") or []
+        candidate_ids = [item.get("runtime_id") for item in candidates if isinstance(item, dict)]
+        if len(candidate_ids) != len(set(candidate_ids)):
+            findings.append(finding("GP170", "error", "Duplicate runtime candidates in analysis", "gpt-project.yaml"))
 
-print("GPT BUILDER PROJECT LINT: PASS")
-print("robustness=guided runtimes=5 persistent_state=not_required")
+        registered_ids = cfg.get("runtime_parity", {}).get("registered_runtimes") or []
+        if not registered_ids:
+            registered_ids = [
+                item.get("runtime_id")
+                for item in (cfg.get("build_system", {}).get("runtime_targets") or {}).values()
+                if isinstance(item, dict) and item.get("runtime_id")
+            ]
+        missing = sorted(set(registered_ids) - set(candidate_ids))
+        if missing:
+            findings.append(finding(
+                "GP171", "error",
+                "Analysis is missing registered runtime candidates: " + ", ".join(missing),
+                "gpt-project.yaml"
+            ))
+
+        for item in candidates:
+            if isinstance(item, dict) and "activate_by_default" not in item:
+                findings.append(finding(
+                    "GP172", "error",
+                    f"Runtime candidate {item.get('runtime_id', '<unknown>')} is missing activate_by_default",
+                    "gpt-project.yaml"
+                ))
+
+        runtime_targets = cfg.get("build_system", {}).get("runtime_targets") or {}
+        target_for_runtime = {
+            item.get("runtime_id"): target
+            for target, item in runtime_targets.items()
+            if isinstance(item, dict) and item.get("runtime_id")
+        }
+        selected_targets = set(cfg.get("build_system", {}).get("targets") or [])
+        for item in candidates:
+            if not isinstance(item, dict) or not item.get("activate_by_default"):
+                continue
+            runtime_id = item.get("runtime_id")
+            target = target_for_runtime.get(runtime_id)
+            if not target:
+                findings.append(finding(
+                    "GP173", "error",
+                    f"Default-active runtime {runtime_id} has no build target",
+                    "gpt-project.yaml"
+                ))
+            elif target not in selected_targets:
+                findings.append(finding(
+                    "GP174", "error",
+                    f"Default-active runtime {runtime_id} is omitted from build_system.targets",
+                    "gpt-project.yaml"
+                ))
+
+    # Small-model/runtime-complexity contract. This is opt-in per project but GPT Byggaren
+    # should generate it for new projects. Critical behavior must be directly present in the
+    # canonical instruction; supporting files may deepen behavior but not be required to recover it.
+    core = cfg.get("instructions", {}).get("core_contract", {})
+    if core.get("enabled"):
+        if not instr_ref or not (root / instr_ref).exists():
+            findings.append(finding("GP500", "error", "Core behavior contract requires a canonical instruction"))
+        else:
+            canonical_text = (root / instr_ref).read_text(encoding="utf-8")
+            required_markers = core.get("required_markers", [])
+            if not isinstance(required_markers, list) or not required_markers:
+                findings.append(finding("GP501", "warning", "Core behavior contract has no required markers", instr_ref))
+            else:
+                for required in required_markers:
+                    if not isinstance(required, str) or not required.strip():
+                        continue
+                    if required not in canonical_text:
+                        findings.append(finding("GP502", "error",
+                            f"Critical behavior marker is missing from canonical instruction: {required}", instr_ref))
+
+        deps = core.get("required_runtime_dependencies", []) or []
+        max_hops = core.get("max_required_file_hops", 1)
+        if not isinstance(deps, list):
+            findings.append(finding("GP503", "error", "required_runtime_dependencies must be a list"))
+            deps = []
+        if isinstance(max_hops, int) and len(deps) > max_hops:
+            findings.append(finding("GP504", "warning",
+                f"Core workflow requires {len(deps)} supporting file hops; configured maximum is {max_hops}"))
+        for dep in deps:
+            if not isinstance(dep, str):
+                continue
+            normalized = dep.replace("\\", "/").lstrip("./")
+            if normalized.startswith("knowledge/") and core.get("knowledge_may_not_be_required_for_core_behavior", True):
+                findings.append(finding("GP505", "error",
+                    "Critical core behavior may not require a Knowledge file", dep))
+            if not exists_ref(root, dep):
+                findings.append(finding("GP506", "error", "Required runtime dependency does not exist", dep))
+
+    ignore_symbolic = {"chat_zip", "custom_gpt", "project", "chat", "build", "dist",
+                       "knowledge", "scripts", "schemas", "templates", "runtime",
+                       "tests", "evals", "research", "src"}
+    for key, value in walk_config_paths(cfg):
+        if not value or value in ignore_symbolic or value.startswith(("http://", "https://")):
+            continue
+        if not exists_ref(root, value):
+            findings.append(finding("GP100", "error", f"Configured path does not exist ({key})", value))
+
+    for rel in ["README.md", "PROJECT.md", "STATUS.md", "project-status.yaml"]:
+        if not (root / rel).exists():
+            findings.append(finding("GP110", "error", f"Required project file missing: {rel}", rel))
+
+    kroot_ref = cfg.get("knowledge_architecture", {}).get("canonical_root")
+    if kroot_ref:
+        kroot = root / kroot_ref
+        if not kroot.exists():
+            findings.append(finding("GP120", "error", "Canonical Knowledge root is missing", kroot_ref))
+        else:
+            files = [p for p in kroot.rglob("*") if p.is_file() and p.name != "KNOWLEDGE.md"]
+            custom = cfg.get("runtime", {}).get("custom_gpt", {}).get("knowledge", {})
+            max_files = custom.get("max_files")
+            strategy = custom.get("strategy")
+            if isinstance(max_files, int) and len(files) > max_files and strategy == "identical":
+                findings.append(finding("GP121", "error",
+                    f"Knowledge has {len(files)} files but identical strategy allows max {max_files}", kroot_ref))
+            for p in files:
+                n = p.name.lower()
+                if "policy" in n or "instruction" in n:
+                    findings.append(finding("GP122", "warning",
+                        "Knowledge filename suggests behavior content; verify layer placement",
+                        p.relative_to(root).as_posix()))
+
+    for p in root.rglob("*"):
+        rel = p.relative_to(root)
+        if p.name in CACHE_NAMES:
+            findings.append(finding("GP200", "error", "Cache directory found in source tree", rel.as_posix()))
+        if p.is_file() and (p.suffix.lower() in SUSPICIOUS_SUFFIXES or p.name in SUSPICIOUS_NAMES):
+            findings.append(finding("GP201", "warning", "Suspicious temporary/historical file", rel.as_posix()))
+        if rel.parts and rel.parts[0] in {"build", "dist"}:
+            findings.append(finding("GP202", "warning", "Generated output exists in source tree", rel.as_posix()))
+
+    hashes = {}
+    for p in root.rglob("*.md"):
+        if any(part in {"build", "dist"} for part in p.parts) or p.stat().st_size == 0:
+            continue
+        hashes.setdefault(sha256(p), []).append(p)
+    for same in hashes.values():
+        if len(same) > 1:
+            paths = [p.relative_to(root).as_posix() for p in same]
+            findings.append(finding("GP210", "warning",
+                "Identical Markdown files detected: " + ", ".join(paths)))
+
+    testing = cfg.get("testing", {})
+    for key in ["manifest", "manifest_schema", "eval_case_schema"]:
+        ref = testing.get(key)
+        if ref and not (root / ref).exists():
+            findings.append(finding("GP300", "error", f"Testing {key} missing", ref))
+
+    ci = cfg.get("ci", {})
+    ci_enabled = ci.get("enabled", ci.get("default", False))
+    wf = ci.get("workflow")
+    if ci_enabled and not wf:
+        findings.append(finding("GP400", "error", "CI is enabled but no workflow is configured"))
+    elif wf:
+        p = root / wf
+        if not p.exists():
+            findings.append(finding("GP400", "error", "CI workflow missing", wf))
+        else:
+            text = p.read_text(encoding="utf-8")
+            if "build_distributions.py" not in text:
+                findings.append(finding("GP401", "error", "CI does not invoke build_distributions.py", wf))
+            if "validate_distributions.py" not in text:
+                findings.append(finding("GP402", "error", "CI does not invoke validate_distributions.py", wf))
+
+    release = cfg.get("release", {}).get("github", {})
+    release_enabled = release.get("enabled", release.get("default", False))
+    wf = release.get("workflow")
+    if release_enabled and not wf:
+        findings.append(finding("GP410", "error", "GitHub release support is enabled but no workflow is configured"))
+    elif wf:
+        p = root / wf
+        if not p.exists():
+            findings.append(finding("GP410", "error", "Release workflow missing", wf))
+        else:
+            text = p.read_text(encoding="utf-8")
+            if "github.event.release.tag_name" not in text:
+                findings.append(finding("GP411", "error", "Release workflow does not derive version from release tag", wf))
+            if "gh release upload" not in text:
+                findings.append(finding("GP412", "error", "Release workflow does not upload built artifacts", wf))
+
+    errors = sum(f["severity"] == "error" for f in findings)
+    warnings = sum(f["severity"] == "warning" for f in findings)
+    result = "fail" if errors else ("warning" if warnings else "pass")
+    return {"result": result,
+            "summary": {"errors": errors, "warnings": warnings, "findings": len(findings)},
+            "findings": findings}
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default=".")
+    parser.add_argument("--json", action="store_true", dest="json_output")
+    args = parser.parse_args()
+    try:
+        report = lint(Path(args.project_root).resolve())
+    except Exception as exc:
+        print(f"LINTER INTERNAL ERROR: {exc}", file=sys.stderr)
+        return 2
+    if args.json_output:
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+    else:
+        for f in report["findings"]:
+            suffix = f" [{f['path']}]" if "path" in f else ""
+            print(f"{f['severity'].upper():7} {f['code']} {f['message']}{suffix}")
+        s = report["summary"]
+        print(f"Lint result: {report['result'].upper()} (errors={s['errors']}, warnings={s['warnings']})")
+    return 1 if report["result"] == "fail" else 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

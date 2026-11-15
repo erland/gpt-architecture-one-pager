@@ -156,3 +156,9 @@ Active peer distributions:
 OpenAI Plugin is a skills-first equivalent peer runtime. The canonical eight-step workflow is embedded in the skill; Knowledge and examples are packaged as optional references. No persistent state, runtime scripts or MCP interface are required for core behavior.
 
 A release builds Project, Chat, Custom GPT, Claude, OpenCode and OpenAI Plugin ZIP packages plus `SHA256SUMS.txt` and `DELIVERY-MANIFEST.json`. Runtime parity, release readiness, project hygiene, workflow parity and reproducible release verification are blocking quality gates.
+
+## GPT Byggaren 1.6.33 (migration)
+
+Den kanoniska instruktionen har behållits. Moderna aktiva mål är ChatGPT Chat, OpenAI Plugin, Claude Projects, Claude Skills och OpenCode; historisk Custom GPT konfiguration är bevarad men inaktiv.
+
+Se [migrationsrapporten](docs/gpt-builder-1.6.33-migration.md), [projektstatus](STATUS.md) och [projektkontrakt](gpt-project.yaml). Byggning sker med den oförändrade, versionslåsta motorn GPT Byggaren v1.6.33.

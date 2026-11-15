@@ -1,0 +1,37 @@
+{
+  "result": "review_required",
+  "source_runtime": "runtime.openai_plugin",
+  "target_runtime": "runtime.plugin",
+  "proposed_config": {
+    "enabled": false,
+    "role": "peer_distribution",
+    "mode": "openai_plugin",
+    "layout": {
+      "manifest_file": "plugin.json",
+      "skills": "skills"
+    },
+    "validation": {
+      "require_manifest": true,
+      "require_skill": true,
+      "require_skill_frontmatter": true
+    }
+  },
+  "source_entrypoint": null,
+  "source_entrypoint_exists": false,
+  "source_entrypoint_missing": true,
+  "recovery_sources": [
+    "gpt-configuration/gpt-instructions.txt"
+  ],
+  "skill_reconstruction_required": true,
+  "host_capability_dependencies": {},
+  "requires_review": [
+    "Recover missing declared SKILL.md from verified canonical instructions when absent",
+    "Ensure canonical skills map to the original plugin behavior",
+    "Verify optional host tools and capability fallbacks",
+    "Verify Knowledge/resources, plugin template and manifest compatibility",
+    "Run actual Plugin ZIP build, validation and mobile import"
+  ],
+  "legacy_config_preserved": true,
+  "runtime_activated": false,
+  "release_ready": false
+}

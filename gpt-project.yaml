@@ -2,61 +2,68 @@ schema_version: 1
 project:
   id: architecture-one-pager
   name: Architecture One Pager
-  description: Concise, decision-oriented architecture one-pagers for technologies, frameworks, platforms, products, methods, architecture practices and IT trends.
+  description: Concise, decision-oriented architecture one-pagers for technologies,
+    frameworks, platforms, products, methods, architecture practices and IT trends.
   profile: guided_research_output
-
 analysis:
   source: existing-project-conversion
   runtime:
     strategy: peer_candidates
     candidates:
-      - runtime_id: chatgpt_chat
-        suitability: ready
-        activate_by_default: true
-        reason: Existing portable Chat distribution already embeds the complete canonical runtime contract.
-      - runtime_id: chatgpt_custom
-        suitability: ready
-        activate_by_default: true
-        reason: Existing Custom GPT package is the original runtime target and already carries canonical instructions and supporting Knowledge.
-      - runtime_id: claude_project
-        suitability: ready
-        activate_by_default: true
-        reason: The workflow is instruction-driven, non-stateful and can be carried by project instructions plus reference files.
-      - runtime_id: opencode
-        suitability: ready
-        activate_by_default: true
-        reason: The canonical workflow can run directly in a workspace; local tools are optional rather than required for core behavior.
-      - runtime_id: openai_plugin
-        suitability: ready
-        activate_by_default: true
-        reason: The instruction-driven guided workflow maps directly to a skills-first Plugin; no persistent state or runtime tools are required for core behavior.
-
+    - runtime_id: chatgpt_chat
+      suitability: ready
+      activate_by_default: true
+      reason: Existing portable Chat distribution already embeds the complete canonical
+        runtime contract.
+    - runtime_id: chatgpt_custom
+      suitability: ready
+      activate_by_default: false
+      reason: Existing Custom GPT package is the original runtime target and already
+        carries canonical instructions and supporting Knowledge.
+    - runtime_id: claude_project
+      suitability: ready
+      activate_by_default: true
+      reason: The workflow is instruction-driven, non-stateful and can be carried
+        by project instructions plus reference files.
+    - runtime_id: opencode
+      suitability: ready
+      activate_by_default: true
+      reason: The canonical workflow can run directly in a workspace; local tools
+        are optional rather than required for core behavior.
+    - runtime_id: openai_plugin
+      suitability: ready
+      activate_by_default: true
+      reason: The instruction-driven guided workflow maps directly to a skills-first
+        Plugin; no persistent state or runtime tools are required for core behavior.
+    - runtime_id: claude_skills
+      suitability: ready
+      activate_by_default: true
+      reason: Samma kanoniska one-pager-beteende projiceras till Claude Skills.
 model_robustness:
   level: guided
-  rationale: The assistant follows an explicit eight-step workflow with deterministic semantic gates, but does not require persistent cross-session state.
+  rationale: The assistant follows an explicit eight-step workflow with deterministic
+    semantic gates, but does not require persistent cross-session state.
   operational_core: true
   explicit_workflow: true
   deterministic_gates: true
   instruction_adherence_evals: true
-
 instructions:
   canonical: gpt-configuration/gpt-instructions.txt
   core_contract:
     enabled: true
     required_markers:
-      - "RUNTIME CONTRACT — FOLLOW FOR EVERY ONE-PAGER REQUEST"
-      - "1. LANGUAGE"
-      - "2. TOPIC CHECK"
-      - "3. CLASSIFICATION"
-      - "4. CURRENT-INFORMATION CHECK"
-      - "5. ASSESSMENT"
-      - "6. RECOMMENDATION"
-      - "7. OUTPUT"
-      - "8. EXPORT"
-      - "Choose exactly one recommendation"
-      - "FINAL SELF-CHECK BEFORE SENDING A ONE-PAGER"
+    - RUNTIME CONTRACT — FOLLOW FOR EVERY ONE-PAGER REQUEST
+    - 1. LANGUAGE
+    - 2. TOPIC CHECK
+    - 3. CLASSIFICATION
+    - 4. CURRENT-INFORMATION CHECK
+    - 5. ASSESSMENT
+    - 6. RECOMMENDATION
+    - 7. OUTPUT
+    - 8. EXPORT
+    - Choose exactly one recommendation
+    - FINAL SELF-CHECK BEFORE SENDING A ONE-PAGER
     knowledge_may_not_be_required_for_core_behavior: true
-
 knowledge_architecture:
   canonical_root: knowledge
   files: 5
@@ -64,14 +71,14 @@ knowledge_architecture:
   examples_root: examples
   examples: 3
   examples_role: style_and_quality_only
-
 capabilities:
   contract_version: 1
   schema: schemas/capability-contract.schema.json
   requirements:
     web:
       level: recommended
-      reason: Required for fresh claims about products, platforms, trends, regulation, pricing, lifecycle, security and market information.
+      reason: Required for fresh claims about products, platforms, trends, regulation,
+        pricing, lifecycle, security and market information.
     filesystem:
       read: recommended
       write: optional
@@ -79,7 +86,8 @@ capabilities:
       level: optional
     code_execution:
       level: optional
-      reason: Useful for export or batch processing but not required for core one-pager behavior.
+      reason: Useful for export or batch processing but not required for core one-pager
+        behavior.
     structured_data:
       level: optional
     persistent_state:
@@ -88,7 +96,6 @@ capabilities:
       level: optional
     image_generation:
       level: not_required
-
 artifacts:
   contract_version: 1
   schema: schemas/artifact-contract.schema.json
@@ -135,7 +142,6 @@ artifacts:
       requirement: required
       persistence: persistent
       multiplicity: one
-
 workspace_state:
   contract_version: 1
   schema: schemas/workspace-state-contract.schema.json
@@ -144,28 +150,28 @@ workspace_state:
     persistence: ephemeral
     portable: true
     separate_from_assistant: true
-    description: Supplied organizational context or files are working material, not persistent assistant state.
+    description: Supplied organizational context or files are working material, not
+      persistent assistant state.
   state:
     requirement: not_required
     persistence: ephemeral
     authority: conversation
-    description: The eight-step workflow completes within the current request; no cross-session state machine is required.
+    description: The eight-step workflow completes within the current request; no
+      cross-session state machine is required.
   runtime_preferences:
     chat: conversation
     agent: workspace_optional
-
 tools:
   contract_version: 1
   schema: schemas/tool-contract.schema.json
   tools: []
-
 runtime:
   primary: none
   chat_zip:
     enabled: true
-    legacy_builder: scripts/build_distributions.py
+    start_here_template: templates/START-HERE.chat.md.tpl
   custom_gpt:
-    enabled: true
+    enabled: false
     legacy_builder: scripts/build_distributions.py
     knowledge:
       max_files: 20
@@ -181,6 +187,11 @@ runtime:
       knowledge: project/knowledge
       examples: project/examples
       runtime_contract: project/runtime-contract.json
+    templates:
+      readme: templates/README.claude.md.tpl
+    validation:
+      require_instructions: true
+      require_runtime_contract: true
   opencode:
     enabled: true
     role: peer_distribution
@@ -190,31 +201,63 @@ runtime:
     instructions: AGENTS.md
     runtime_root: .opencode/architecture-one-pager
     runtime_contract: .opencode/architecture-one-pager/runtime-contract.json
-  openai_plugin:
+    layout:
+      instructions: AGENTS.md
+      config: opencode.json
+      tools: .opencode/tools
+      runtime_scripts: scripts
+      runtime_contract: .opencode/runtime-contract.json
+      knowledge: knowledge
+    templates:
+      readme: templates/README.opencode.md.tpl
+    skills:
+      enabled: true
+      directory: .opencode/skills
+      definitions:
+      - id: gpt-project-workflow
+        name: gpt-project-workflow
+        description: Planera, återuppta och fortsätt ett GPT Byggaren-projekt utifrån
+          faktisk projektstatus.
+        references:
+        - docs/dynamic-planning.md
+        - docs/resume-flow.md
+        - docs/next-step-recommendation.md
+    validation:
+      require_agents_md: true
+      require_runtime_contract: true
+  plugin:
     enabled: true
     role: peer_distribution
-    mode: skills_first
+    mode: openai_plugin
     builder: scripts/build_peer_distributions.py
     validator: scripts/validate_peer_distributions.py
     instructions: skills/architecture-one-pager/SKILL.md
     runtime_contract: runtime-contract.json
-
+    layout:
+      manifest_file: plugin.json
+      skills: skills
+      references: references
+      assets: assets
+      scripts: scripts
+    templates:
+      readme: templates/README.plugin.md.tpl
+    validation:
+      require_manifest: true
+      require_skill: true
+      require_skill_frontmatter: true
 ci:
   enabled: true
   workflow: .github/workflows/build-distributions.yml
-
 release:
   github:
     enabled: true
     workflow: .github/workflows/build-distributions.yml
     version_source: release_tag
-
 migration:
-  target: gpt-builder-1.5.0
-  type: existing-project-conversion
+  target: gpt-builder-1.6.33
+  type: existing-project-upgrade
   preserve_domain_behavior: true
   preserve_legacy_distribution_sources_until_replaced: true
-
 testing:
   manifest: tests/test-manifest.yaml
   manifest_schema: schemas/test-manifest.schema.json
@@ -222,18 +265,121 @@ testing:
   contract_validator: scripts/validate_gpt_builder_tests.py
   deterministic_contracts_block_release: true
   live_model_runtime_evals_are_separate: true
-
 runtime_parity:
   model: runtime-parity.yaml
   registered_runtimes:
-    - chatgpt_chat
-    - chatgpt_custom
-    - claude_project
-    - opencode
-    - openai_plugin
+  - chatgpt_chat
+  - claude_project
+  - claude_skills
+  - opencode
+  - openai_plugin
   compared_categories:
-    - behavior
-    - capability
-    - artifact
-    - workspace_state
-    - tool
+  - behavior
+  - capability
+  - artifact
+  - workspace_state
+  - tool
+build_system:
+  build_script: scripts/build_distributions.py
+  validation_script: scripts/validate_distributions.py
+  targets:
+  - project
+  - chat
+  - claude_project
+  - claude_skills
+  - opencode
+  - plugin
+  runtime_targets:
+    chat:
+      runtime_id: chatgpt_chat
+      runtime_key: chat_zip
+      builder: chat
+      artifact_type: chat_zip
+      filename_pattern: <project-id>-chat-<version>.zip
+    claude_project:
+      runtime_id: claude_project
+      runtime_key: claude
+      builder: claude
+      artifact_type: claude_project_zip
+      filename_pattern: <project-id>-claude-project-<version>.zip
+    claude_skills:
+      runtime_id: claude_skills
+      runtime_key: claude
+      builder: claude_skills
+      artifact_type: claude_skills_zip
+      filename_pattern: <project-id>-claude-skills-<version>.zip
+    opencode:
+      runtime_id: opencode
+      runtime_key: opencode
+      builder: opencode
+      artifact_type: opencode_zip
+      filename_pattern: <project-id>-opencode-<version>.zip
+    plugin:
+      runtime_id: openai_plugin
+      runtime_key: plugin
+      builder: plugin
+      artifact_type: plugin_zip
+      filename_pattern: <project-id>-plugin-<version>.zip
+  output_root: dist
+  working_root: build
+  deterministic_zip: true
+  manifest: true
+  checksums: sha256
+  project_zip_excludes:
+  - build/**
+  - dist/**
+  - .git/**
+  - '**/__pycache__/**'
+  - '**/.pytest_cache/**'
+skills:
+  contract_version: 1
+  schema: schemas/skill-contract.schema.json
+  mode: inferred
+  definitions:
+  - id: architecture-one-pager
+    name: architecture-one-pager
+    description: Skapa beslutsorienterade one-pagers för teknik, produkter, metoder
+      och trender.
+    references: []
+    assets: []
+    scripts: []
+structure:
+  canonical_root: src
+  instructions:
+    path: gpt-configuration
+    required: true
+  conversation_starters:
+    path: gpt-configuration
+    required: true
+  runtime_policy:
+    path: runtime-policy
+    required: false
+  knowledge:
+    path: knowledge
+    required: false
+  templates:
+    path: templates
+    required: false
+  schemas:
+    path: schemas
+    required: false
+  scripts:
+    path: scripts
+    required: false
+  tests:
+    path: tests
+    required: false
+  evals:
+    path: evals
+    required: false
+  research:
+    path: research
+    required: false
+  build:
+    path: build
+    generated: true
+    create_when_needed: true
+  dist:
+    path: dist
+    generated: true
+    create_when_needed: true
