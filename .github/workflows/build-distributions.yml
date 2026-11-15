@@ -46,11 +46,14 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "Building version $version"
 
+      - name: Build distributions
+        run: python3 scripts/build_distributions.py --version '${{ steps.version.outputs.version }}'
+
       - name: Validate GPT Builder test contract
         run: python3 scripts/validate_gpt_builder_tests.py
 
-      - name: Build distributions
-        run: python3 scripts/build_distributions.py --version '${{ steps.version.outputs.version }}'
+      - name: Validate runtime regressions
+        run: python3 scripts/validate_runtime_regressions.py
 
       - name: Validate distributions
         run: python3 scripts/validate_distributions.py --project-root .
