@@ -24,3 +24,16 @@ suites:
     blocking: false
     path: tests/runtime-regression-cases.json
     description: Samma tolv prompts kan köras manuellt mot faktiska Luna/Sol eller andra peer-runtimes. Resultat dokumenteras separat och är inte samma sak som den deterministiska kontraktsvalideringen.
+
+  generated_output_fixtures:
+    type: deterministic
+    blocking: true
+    path: tests/test_generated_one_pager.py
+    runner: python3 -m unittest discover -s tests -p 'test_generated_one_pager.py' -v
+    description: Testar acceptansvalideraren med godkända och felaktiga exempelutdata; anropar inte en språkmodell.
+
+  generated_output_live_acceptance:
+    type: manual_runtime
+    blocking: false
+    path: scripts/validate_generated_one_pager.py
+    description: Kör ett faktiskt genererat modellresultat genom textvalideraren och granska källornas faktainnehåll manuellt. Detta är inte en automatisk live-modellkörning.
