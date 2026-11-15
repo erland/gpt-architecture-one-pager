@@ -1,31 +1,15 @@
-# PROJECT – Architecture One Pager
+# Architecture One Pager – projekt
 
-Architecture One Pager skapar korta, beslutsorienterade one-pagers för teknologier, ramverk, plattformar, produkter, metoder, arkitekturpraktiker och IT-trender.
+Syfte: beslutsorienterade arkitektur-one-pagers för teknologier, ramverk, plattformar, produkter, metoder och trender.
 
-## Canonical källa
+## Auktoritativa källor
 
-- Instruktion: `gpt-configuration/gpt-instructions.txt`
-- Knowledge: `knowledge/`
-- Golden examples: `examples/`
-- Portable Chat preamble: `portable/START-HERE-PREAMBLE.md`
+- Beteende: `gpt-configuration/gpt-instructions.txt` (oförändrat)
+- Referenser: `knowledge/` och `examples/`
+- Projektkontrakt: `gpt-project.yaml`
+- Status: `project-status.yaml` och `STATUS.md`
+- Migreringsplan: `docs/gpt-builder-1.6.33-migration.md`
 
-## GPT Byggaren 1.5-konvertering
+Fem aktiva distributioner: ChatGPT Chat, Claude Projects, Claude Skills, OpenCode och OpenAI Plugin. Custom GPT är en inaktiv historisk distribution.
 
-Projektet konverteras från en äldre, handbyggd GPT-struktur till GPT Byggaren 1.5.0 utan att ändra det etablerade one-pager-beteendet.
-
-Robusthetsnivå: **guided**.
-
-Skäl:
-- tydligt åttastegsflöde,
-- deterministiska semantiska validatorer,
-- regressioner för enklare modeller,
-- ingen persistent state machine krävs.
-
-Runtime-mål:
-- ChatGPT Chat – ready / active
-- Custom GPT – ready / active
-- Claude Projects – ready / active
-- OpenCode – ready / active
-- OpenAI Plugin – reduced / inactive
-
-Migreringsplan: `docs/gpt-builder-1.5-migration-plan.md`.
+Version av GPT Byggaren-motorn: **1.6.33**. Produktversion: **1.0.0**.

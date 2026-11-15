@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import json
 import re
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES_PATH = ROOT / "tests/runtime-regression-cases.json"
 INSTRUCTIONS_PATH = ROOT / "gpt-configuration/gpt-instructions.txt"
 PREAMBLE_PATH = ROOT / "portable/START-HERE-PREAMBLE.md"
-BUILD_PATH = ROOT / "scripts/build_distributions.py"
+DIST_PATH = ROOT / "dist"
 
 REQUIRED_CASE_IDS = {
     "missing-topic-sv",
@@ -175,14 +176,21 @@ def validate_runtime_contract(instructions: str) -> None:
 
 
 def validate_chat_compilation() -> None:
-    build = BUILD_PATH.read_text(encoding="utf-8")
+    """Check the actual Chat distribution instead of old 1.5 builder internals."""
     preamble = PREAMBLE_PATH.read_text(encoding="utf-8")
-    if "build_chat_entrypoint" not in build:
-        fail("Build script no longer compiles the portable Chat entrypoint")
-    if "CANONICAL_INSTRUCTIONS" not in build or "CHAT_PREAMBLE" not in build:
-        fail("Portable Chat build no longer derives from canonical instructions + preamble")
     if "portable ChatGPT distribution" not in preamble:
         fail("Portable Chat preamble lost its runtime identity marker")
+    archives = sorted(DIST_PATH.glob("*-chat-*.zip"))
+    if len(archives) != 1:
+        fail(f"Expected one built Chat archive, found {len(archives)}")
+    with zipfile.ZipFile(archives[0]) as archive:
+        if "assistant/instructions.md" not in archive.namelist():
+            fail("Chat archive lacks assistant/instructions.md")
+        compiled = archive.read("assistant/instructions.md").decode("utf-8")
+        if INSTRUCTIONS_PATH.read_text(encoding="utf-8").strip() not in compiled:
+            fail("Chat instructions do not include complete canonical instructions")
+        if "Chat ZIP" not in archive.read("START-HERE.md").decode("utf-8"):
+            fail("Chat archive lost portable runtime identity marker")
 
 
 def main() -> int:

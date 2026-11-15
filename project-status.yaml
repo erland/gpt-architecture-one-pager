@@ -4,52 +4,55 @@ project:
   name: Architecture One Pager
   product_version: 1.0.0
 plan:
-  path: docs/gpt-builder-1.5-migration-plan.md
-  total_steps: 5
+  path: docs/gpt-builder-1.6.33-migration.md
+  total_steps: 6
 progress:
-  current_phase: maintenance
-  current_step: 5
+  current_phase: migration-verification
+  current_step: 6
   last_completed_step: 5
   completed_steps:
-    - 1
-    - 2
-    - 3
-    - 4
-    - 5
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
   skipped_steps: []
 state:
-  overall: pass
+  overall: verification_pending
   blocking_issues: []
-  warnings: []
+  warnings:
+  - Värdmiljöernas funktionella tester är inte genomförda.
+  - GitHub Actions måste verifieras efter incheckning.
 validation:
-  last_result: pass
-  details: GPT Builder guided lint, testkontrakt, Chat/Custom/Claude/OpenCode/OpenAI Plugin, Project ZIP, runtime parity, release readiness, 12 runtime-regressioner, final project hygiene, workflow parity och reproducerbar release passerar för fem aktiva peer runtimes.
+  last_result: build_pass
+  details: Originalmotorns självtest, sex ZIP-byggnader och distributionsvalidering
+    passerade lokalt. Funktionell runtimeparitet ej verifierad.
 project_hygiene:
   last_result: pass
   details: Genererade dist/build/cache/temp-artefakter ignoreras och är inte versionshanterade.
 release:
-  state: ready
+  state: pending_host_verification
   version: 1.0.0
   artifacts:
-    - project_zip
-    - chat_zip
-    - custom_gpt_zip
-    - claude_zip
-    - opencode_zip
-    - plugin_zip
-    - sha256_checksums
-    - delivery_manifest
-  note: GPT Builder 1.5.0-konverteringen är klar och PR:n är redo att mergeas.
+  - project_zip
+  - chat_zip
+  - claude_project_zip
+  - claude_skills_zip
+  - opencode_zip
+  - plugin_zip
+  - sha256_checksums
+  - delivery_manifest
 next_step:
-  recommended: null
-  title: Maintenance
-  reason: Alla konverteringssteg 1–5 är klara och verifierade.
+  recommended: 6
+  title: Verifiera GitHub Actions och import i respektive runtime
+  reason: Lokala kontrakttester är inte funktionella värdmiljötester.
 resume:
   supported: true
   required_files:
-    - gpt-project.yaml
-    - project-status.yaml
-    - docs/gpt-builder-1.5-migration-plan.md
-    - STATUS.md
-    - PROJECT.md
-  human_readable_status: Konverteringen till GPT Byggaren 1.5.0 är klar. Projektet är i maintenance-läge.
+  - gpt-project.yaml
+  - project-status.yaml
+  - docs/gpt-builder-1.6.33-migration.md
+  - STATUS.md
+  - PROJECT.md
+  human_readable_status: Migrering till GPT Byggaren 1.6.33 byggd och strukturellt
+    verifierad; värdmiljötest och CI återstår.

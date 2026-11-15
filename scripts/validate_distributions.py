@@ -1,194 +1,417 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import argparse, hashlib, json, re, zipfile
+
+import argparse
+import ast
+import json
+import sys
+import zipfile
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$")
-CANONICAL_INSTRUCTIONS = ROOT / "gpt-configuration/gpt-instructions.txt"
-CHAT_PREAMBLE = ROOT / "portable/START-HERE-PREAMBLE.md"
-KNOWLEDGE = sorted((ROOT / "knowledge").glob("*.md"))
-EXAMPLES = sorted((ROOT / "examples").glob("*.md"))
-CUSTOM_SOURCE_FILES = [
-    ROOT / "README.md",
-    ROOT / "gpt-configuration/gpt-name-and-description.md",
-    CANONICAL_INSTRUCTIONS,
-    ROOT / "gpt-configuration/conversation-starters.md",
-    ROOT / "gpt-configuration/recommended-capabilities.md",
-    ROOT / "setup/how-to-configure-the-gpt.md",
-] + KNOWLEDGE + EXAMPLES
-
-# These are intentionally plain-text semantic guardrails rather than a full parser.
-# They catch accidental deletion or drift of behavior that lightweight models rely on.
-REQUIRED_RUNTIME_MARKERS = [
-    "1. LANGUAGE",
-    "2. TOPIC CHECK",
-    "3. CLASSIFICATION",
-    "4. CURRENT-INFORMATION CHECK",
-    "5. ASSESSMENT",
-    "6. RECOMMENDATION",
-    "7. OUTPUT",
-    "8. EXPORT",
-    "ask exactly one concise question",
-    "Choose exactly one recommendation",
-    "Never combine recommendation labels",
-    "Executive summary",
-    "Sammanfattning",
-    "Adopt / Inför",
-    "Trial / Testa",
-    "Assess / Utvärdera",
-    "Hold / Avvakta",
-    "medium-to-large organization",
-    "core behavior must not depend on locating a particular knowledge file",
-    "FINAL SELF-CHECK BEFORE SENDING A ONE-PAGER",
-    "the available export formats are offered after it",
-]
-
-REQUIRED_CHAT_MARKERS = [
-    "portable ChatGPT distribution",
-    "embedded canonical runtime instructions",
-    "Core behavior must never depend on retrieving a particular knowledge file",
-]
+try:
+    import yaml
+except Exception as exc:
+    raise SystemExit("PyYAML is required") from exc
 
 
-def digest(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
+FORBIDDEN_PARTS = {
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    "research",
+    "evals",
+    "tests",
+}
 
 
-def assert_same(zf: zipfile.ZipFile, member: str, src: Path) -> None:
-    actual = zf.read(member)
-    expected = src.read_bytes()
-    if actual != expected:
-        raise RuntimeError(f"Content differs: {member} != {src.relative_to(ROOT)}")
+def load_cfg(root: Path) -> dict:
+    return yaml.safe_load((root / "gpt-project.yaml").read_text(encoding="utf-8"))
 
 
-def assert_contains(text: str, markers: list[str], label: str) -> None:
-    missing = [m for m in markers if m not in text]
-    if missing:
-        raise RuntimeError(f"Semantic runtime validation failed for {label}; missing: {missing}")
+def validate_custom(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "custom-gpt"
+    if not build.exists():
+        return ["Custom GPT build directory missing"]
+
+    instr = build / "builder" / "instructions.md"
+    if not instr.exists():
+        errors.append("Missing builder/instructions.md")
+    else:
+        actual = len(instr.read_text(encoding="utf-8"))
+        limit = int(cfg["runtime"]["custom_gpt"]["instruction"]["max_characters"])
+        if actual > limit:
+            errors.append(f"Instruction too long: {actual} > {limit}")
+
+    kp = build / "builder" / "knowledge-package"
+    files = [p for p in kp.rglob("*") if p.is_file()] if kp.exists() else []
+    limit = int(cfg["runtime"]["custom_gpt"]["knowledge"]["max_files"])
+    if len(files) > limit:
+        errors.append(f"Too many Knowledge files: {len(files)} > {limit}")
+
+    required = [
+        build / "builder" / "instructions.md",
+        build / "builder" / "conversation-starters.md",
+        build / "builder" / "capabilities.md",
+        build / cfg["runtime"]["custom_gpt"]["builder"].get("runtime_contract", "builder/runtime-contract.json"),
+        build / "README.md",
+        build / "COMPATIBILITY.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+    return errors
 
 
-def expected_chat_entrypoint() -> str:
-    preamble = CHAT_PREAMBLE.read_text(encoding="utf-8").rstrip()
-    instructions = CANONICAL_INSTRUCTIONS.read_text(encoding="utf-8").strip()
-    return f"{preamble}\n\n{instructions}\n"
+def validate_claude(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "claude"
+    if not build.exists():
+        return ["Claude build directory missing"]
+
+    runtime_cfg = cfg["runtime"]["claude"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["project"]["instructions"],
+        build / runtime_cfg["project"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+    return errors
 
 
-def validate_runtime_source() -> None:
-    canonical = CANONICAL_INSTRUCTIONS.read_text(encoding="utf-8")
-    assert_contains(canonical, REQUIRED_RUNTIME_MARKERS, "canonical Custom GPT instructions")
 
-    if len(KNOWLEDGE) != 5:
-        raise RuntimeError(f"Expected 5 knowledge files, found {len(KNOWLEDGE)}")
-    if len(EXAMPLES) != 3:
-        raise RuntimeError(f"Expected 3 golden examples, found {len(EXAMPLES)}")
-
-    for path in KNOWLEDGE:
-        text = path.read_text(encoding="utf-8").lower()
-        if "runtime" not in text and "support" not in text and "reference" not in text:
-            raise RuntimeError(f"Knowledge file does not clearly identify itself as supporting reference: {path.name}")
-
-    for path in EXAMPLES:
-        text = path.read_text(encoding="utf-8").lower()
-        if "not a factual source" not in text and "inte en faktakälla" not in text:
-            raise RuntimeError(f"Golden example lacks non-factual-source guardrail: {path.name}")
-
-
-def validate_profile(profile: dict, target: str, version: str) -> None:
-    if profile.get("package") != "architecture-one-pager":
-        raise RuntimeError(f"Wrong package in {target} runtime profile")
-    if profile.get("target") != target:
-        raise RuntimeError(f"Wrong target in runtime profile: expected {target}")
-    if profile.get("version") != version:
-        raise RuntimeError(f"Wrong version in {target} runtime profile")
-    if profile.get("core_behavior_requires_knowledge") is not False:
-        raise RuntimeError(f"{target} profile must state that core behavior does not require knowledge retrieval")
-    if profile.get("small_model_safe") is not True:
-        raise RuntimeError(f"{target} profile must be marked small_model_safe")
+def validate_claude_skills(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "claude-skills"
+    if not build.exists():
+        return ["Claude Skills build directory missing"]
+    for name in ("README.md", "VERSION", "MANIFEST.json", "runtime-contract.json"):
+        if not (build / name).is_file():
+            errors.append(f"Claude Skills missing {name}")
+    if (build / "project").exists():
+        errors.append("Claude Skills must not embed a Claude Project")
+    skills = cfg.get("skills", {}).get("definitions", [])
+    for skill in skills:
+        ident = skill["id"]
+        skill_dir = build / "skills" / ident
+        if not (skill_dir / "SKILL.md").is_file():
+            errors.append(f"Claude Skills missing {ident}/SKILL.md")
+        for category in ("references", "assets", "scripts"):
+            for source in skill.get(category, []) or []:
+                if not (skill_dir / category / Path(source).name).is_file():
+                    errors.append(f"Claude Skills missing {ident}/{category}/{Path(source).name}")
+    return errors
 
 
-def validate(version: str, dist: Path) -> None:
-    if not SEMVER.fullmatch(version):
-        raise RuntimeError(f"Invalid version: {version}")
-    validate_runtime_source()
+def validate_opencode(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "opencode"
+    if not build.exists():
+        return ["OpenCode build directory missing"]
 
-    custom_path = dist / f"architecture-one-pager-custom-gpt-v{version}.zip"
-    chat_path = dist / f"architecture-one-pager-chat-v{version}.zip"
-    for p in (custom_path, chat_path):
+    runtime_cfg = cfg["runtime"]["opencode"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / runtime_cfg["layout"]["instructions"],
+        build / runtime_cfg["layout"]["config"],
+        build / runtime_cfg["layout"]["runtime_contract"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    if (build / "CLAUDE.md").exists():
+        errors.append("OpenCode base runtime must use AGENTS.md, not CLAUDE.md")
+
+    tool_contract = cfg.get("tools", {}).get("tools", [])
+    tools_dir = build / runtime_cfg["layout"]["tools"]
+    scripts_dir = build / runtime_cfg["layout"]["runtime_scripts"]
+    expected_tools = []
+    for item in tool_contract:
+        if item.get("type") != "script":
+            continue
+        tool_name = "gpt_" + item["id"].replace("-", "_")
+        expected_tools.append(tool_name)
+        wrapper = tools_dir / f"{tool_name}.ts"
+        script = scripts_dir / Path(item["script"]).name
+        if not wrapper.exists():
+            errors.append(f"Missing OpenCode custom tool: {wrapper.relative_to(build)}")
+        if not script.exists():
+            errors.append(f"Missing OpenCode runtime script: {script.relative_to(build)}")
+
+    config_path = build / runtime_cfg["layout"]["config"]
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            permissions = config.get("permission", {})
+            for item in tool_contract:
+                if item.get("type") != "script":
+                    continue
+                tool_name = "gpt_" + item["id"].replace("-", "_")
+                expected = "ask" if item.get("mutates_workspace") else "allow"
+                if permissions.get(tool_name) != expected:
+                    errors.append(f"OpenCode permission mismatch for {tool_name}")
+        except Exception as exc:
+            errors.append(f"Invalid OpenCode config: {exc}")
+
+    skills_cfg = runtime_cfg.get("skills", {})
+    if skills_cfg.get("enabled"):
+        root_path = build / skills_cfg.get("directory", ".opencode/skills")
+        canonical_skills = cfg.get("skills", {}).get("definitions") or skills_cfg.get("definitions", [])
+        for skill in canonical_skills:
+            skill_file = root_path / skill["id"] / "SKILL.md"
+            if not skill_file.exists():
+                errors.append(f"Missing OpenCode skill: {skill_file.relative_to(build)}")
+            else:
+                text = skill_file.read_text(encoding="utf-8")
+                if f"name: {skill['id']}" not in text:
+                    errors.append(f"OpenCode skill name mismatch: {skill['id']}")
+                if f"description: {skill['description']}" not in text:
+                    errors.append(f"OpenCode skill description mismatch: {skill['id']}")
+    return errors
+
+
+def _parse_skill_frontmatter(text: str) -> dict:
+    if not text.startswith("---\n"):
+        return {}
+    end = text.find("\n---\n", 4)
+    if end < 0:
+        return {}
+    block = text[4:end]
+    data = {}
+    for line in block.splitlines():
+        if not line.strip() or line.startswith(" ") or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        data[key.strip()] = value.strip()
+    return data
+
+
+def validate_plugin_zip_entries(zip_path: Path) -> list[str]:
+    """Check installable archive entries, not just staging paths."""
+    errors = []
+    try:
+        with zipfile.ZipFile(zip_path) as archive:
+            for entry in archive.namelist():
+                if entry.replace("\\", "/").rstrip("/").split("/")[-1].lower() == "mcp.json":
+                    errors.append(f"Forbidden plugin ZIP entry: {entry}")
+    except (OSError, zipfile.BadZipFile) as exc:
+        errors.append(f"Invalid plugin ZIP: {exc}")
+    return errors
+
+
+def validate_plugin(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "plugin"
+    if not build.exists():
+        return ["Plugin build directory missing"]
+
+    for path in build.rglob("*"):
+        if path.is_file() and path.name.lower() == "mcp.json":
+            errors.append(f"Forbidden plugin file: {path.relative_to(build)}")
+
+    for archive in (root / "dist").glob(f"{cfg['project']['id']}-plugin-*.zip"):
+        errors.extend(validate_plugin_zip_entries(archive))
+
+    runtime_cfg = cfg["runtime"]["plugin"]
+    required = [
+        build / "README.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / "runtime-contract.json",
+        build / runtime_cfg["layout"]["manifest_file"],
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    plugin_json = build / runtime_cfg["layout"]["manifest_file"]
+    if plugin_json.exists():
+        try:
+            manifest = json.loads(plugin_json.read_text(encoding="utf-8"))
+            for key in ("name", "version", "description"):
+                if not manifest.get(key):
+                    errors.append(f"Plugin manifest missing required field: {key}")
+        except Exception as exc:
+            errors.append(f"Invalid plugin.json: {exc}")
+
+    manifest_path = build / "MANIFEST.json"
+    if manifest_path.exists():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if manifest.get("adapter_id") != "openai_plugin":
+                errors.append("Plugin MANIFEST adapter_id mismatch")
+            if manifest.get("plugin_manifest") != runtime_cfg["layout"]["manifest_file"]:
+                errors.append("Plugin MANIFEST plugin_manifest mismatch")
+            if manifest.get("contract_snapshot") != "runtime-contract.json":
+                errors.append("Plugin MANIFEST contract_snapshot mismatch")
+        except Exception as exc:
+            errors.append(f"Invalid plugin MANIFEST.json: {exc}")
+
+    skill_defs = cfg.get("skills", {}).get("definitions") or []
+    skills_root = build / runtime_cfg["layout"]["skills"]
+    if runtime_cfg.get("validation", {}).get("require_skill", True) and not skill_defs:
+        errors.append("Plugin runtime requires at least one canonical skill")
+
+    for skill in skill_defs:
+        skill_dir = skills_root / skill["id"]
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            errors.append(f"Missing plugin skill: {skill_file.relative_to(build)}")
+            continue
+
+        text = skill_file.read_text(encoding="utf-8")
+        frontmatter = _parse_skill_frontmatter(text)
+        if runtime_cfg.get("validation", {}).get("require_skill_frontmatter", True):
+            if frontmatter.get("name") != skill["id"]:
+                errors.append(f"Plugin skill name mismatch: {skill['id']}")
+            if frontmatter.get("description") != skill["description"]:
+                errors.append(f"Plugin skill description mismatch: {skill['id']}")
+
+        for key in ("references", "assets", "scripts"):
+            for ref in skill.get(key, []) or []:
+                expected = skill_dir / key / Path(ref).name
+                if not expected.exists():
+                    errors.append(
+                        f"Missing plugin skill {key[:-1]}: {expected.relative_to(build)}"
+                    )
+
+        scripts_dir = skill_dir / "scripts"
+        packaged_scripts = [
+            p for p in scripts_dir.glob("*")
+            if p.is_file()
+        ] if scripts_dir.exists() else []
+        shared_lib = root / "scripts" / "lib"
+        if packaged_scripts and shared_lib.exists():
+            # Match the builder's import-based dependency selection, including
+            # transitive imports. Do not demand unrelated files from scripts/lib.
+            required = set()
+            pending = [p for p in packaged_scripts if p.suffix == ".py"]
+            while pending:
+                source = pending.pop()
+                try:
+                    tree = ast.parse(source.read_text(encoding="utf-8"))
+                except (SyntaxError, OSError, UnicodeError):
+                    continue
+                for node in ast.walk(tree):
+                    module = node.module if isinstance(node, ast.ImportFrom) else None
+                    if module and (module == "lib" or module.startswith("lib.")):
+                        names = (
+                            [alias.name for alias in node.names]
+                            if module == "lib" else [module.split(".")[1]]
+                        )
+                        for name in names:
+                            helper = shared_lib / (name + ".py")
+                            if helper.is_file() and helper not in required:
+                                required.add(helper)
+                                pending.append(helper)
+            if required:
+                init = shared_lib / "__init__.py"
+                if init.is_file():
+                    required.add(init)
+            # The GPT Builder's own distribution intentionally includes the
+            # complete Engine library; preserve that stronger check.
+            if cfg.get("project", {}).get("id") == "gpt-byggaren":
+                required.update(
+                    p for p in shared_lib.rglob("*")
+                    if p.is_file() and p.suffix not in {".pyc", ".pyo"}
+                )
+            for source in sorted(required):
+                expected = scripts_dir / "lib" / source.relative_to(shared_lib)
+                if not expected.is_file():
+                    errors.append(
+                        f"Missing plugin shared script dependency: {expected.relative_to(build)}"
+                    )
+
+    forbidden_parts = {
+        ".git",
+        ".github",
+        "tests",
+        "evals",
+        "research",
+        "build",
+        "dist",
+        "__pycache__",
+        ".pytest_cache",
+        ".mypy_cache",
+        ".ruff_cache",
+    }
+    for p in build.rglob("*"):
+        rel = p.relative_to(build)
+        if any(part in forbidden_parts for part in rel.parts):
+            errors.append(f"Forbidden plugin runtime path: {rel}")
+
+    return errors
+
+
+def validate_chat(root: Path, cfg: dict) -> list[str]:
+    errors = []
+    build = root / "build" / "chat"
+    if not build.exists():
+        return ["Chat build directory missing"]
+
+    required = [
+        build / "START-HERE.md",
+        build / "VERSION",
+        build / "MANIFEST.json",
+        build / "assistant" / "instructions.md",
+    ]
+    for p in required:
+        if not p.exists():
+            errors.append(f"Missing required file: {p.relative_to(build)}")
+
+    for p in build.rglob("*"):
         if not p.is_file():
-            raise RuntimeError(f"Missing distribution: {p}")
-        with zipfile.ZipFile(p) as zf:
-            bad = zf.testzip()
-            if bad:
-                raise RuntimeError(f"Corrupt ZIP member in {p.name}: {bad}")
-
-    with zipfile.ZipFile(custom_path) as zf:
-        if "runtime-contract.json" not in zf.namelist():
-            raise RuntimeError("Custom GPT runtime contract missing")
-        for src in CUSTOM_SOURCE_FILES:
-            assert_same(zf, src.relative_to(ROOT).as_posix(), src)
-        if zf.read("VERSION").decode().strip() != version:
-            raise RuntimeError("Wrong VERSION in Custom GPT package")
-        canonical = zf.read("gpt-configuration/gpt-instructions.txt").decode("utf-8")
-        assert_contains(canonical, REQUIRED_RUNTIME_MARKERS, "Custom GPT package instructions")
-        profile = json.loads(zf.read("RUNTIME-PROFILE.json"))
-        validate_profile(profile, "custom-gpt", version)
-        if profile.get("entrypoint") != "gpt-configuration/gpt-instructions.txt":
-            raise RuntimeError("Wrong Custom GPT runtime entrypoint")
-
-    with zipfile.ZipFile(chat_path) as zf:
-        if "assistant/runtime-contract.json" not in zf.namelist():
-            raise RuntimeError("Chat runtime contract missing")
-        assert_same(zf, "assistant/instructions.txt", CANONICAL_INSTRUCTIONS)
-        assert_same(zf, "assistant/conversation-starters.md", ROOT / "gpt-configuration/conversation-starters.md")
-        for src in KNOWLEDGE + EXAMPLES:
-            assert_same(zf, src.relative_to(ROOT).as_posix(), src)
-        if zf.read("VERSION").decode().strip() != version:
-            raise RuntimeError("Wrong VERSION in portable package")
-
-        start_here = zf.read("START-HERE.md").decode("utf-8")
-        if start_here != expected_chat_entrypoint():
-            raise RuntimeError("START-HERE.md was not compiled from the current preamble + canonical instructions")
-        assert_contains(start_here, REQUIRED_CHAT_MARKERS + REQUIRED_RUNTIME_MARKERS, "portable chat START-HERE")
-
-        profile = json.loads(zf.read("RUNTIME-PROFILE.json"))
-        validate_profile(profile, "portable-chat", version)
-        if profile.get("entrypoint") != "START-HERE.md":
-            raise RuntimeError("Wrong portable chat runtime entrypoint")
-
-        manifest = json.loads(zf.read("MANIFEST.json"))
-        if manifest.get("version") != version:
-            raise RuntimeError("Wrong version in MANIFEST.json")
-        if manifest.get("entrypoint") != "START-HERE.md":
-            raise RuntimeError("Wrong entrypoint in MANIFEST.json")
-        if manifest.get("instructions") != "assistant/instructions.txt":
-            raise RuntimeError("Wrong instructions path in MANIFEST.json")
-        if manifest.get("runtime_profile") != "RUNTIME-PROFILE.json":
-            raise RuntimeError("Wrong runtime profile path in MANIFEST.json")
-        if manifest.get("knowledge") != [f"knowledge/{p.name}" for p in KNOWLEDGE]:
-            raise RuntimeError("Knowledge list in MANIFEST.json differs from source")
-        if manifest.get("examples") != [f"examples/{p.name}" for p in EXAMPLES]:
-            raise RuntimeError("Example list in MANIFEST.json differs from source")
-
-        hashed_members = manifest.get("sha256", {})
-        expected_hashed = sorted(n for n in zf.namelist() if n != "MANIFEST.json")
-        if sorted(hashed_members) != expected_hashed:
-            raise RuntimeError("MANIFEST.json SHA-256 member list is incomplete or contains unexpected entries")
-        for member, expected_hash in hashed_members.items():
-            if digest(zf.read(member)) != expected_hash:
-                raise RuntimeError(f"SHA-256 mismatch for {member}")
-
-    print(f"Validation OK for Architecture One Pager v{version}")
-    print("Semantic runtime checks OK: workflow, recommendation, language/output, small-model profile and compiled chat entrypoint")
+            continue
+        rel = p.relative_to(build)
+        if any(part in FORBIDDEN_PARTS for part in rel.parts):
+            errors.append(f"Forbidden runtime path: {rel}")
+    return errors
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--dist", default=str(ROOT / "dist"))
-    ap.add_argument("--version")
-    args = ap.parse_args()
-    version = args.version or (ROOT / "VERSION").read_text(encoding="utf-8").strip()
-    validate(version, Path(args.dist))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--project-root", default=".")
+    args = parser.parse_args()
+
+    root = Path(args.project_root).resolve()
+    cfg = load_cfg(root)
+    if isinstance(cfg.get("reconstruction"), dict) and (
+        cfg["reconstruction"].get("release_ready") is not True
+        or cfg["reconstruction"].get("status") != "runtime_parity_verified"
+    ):
+        raise SystemExit(
+            "Reconstructed project is not release-ready: complete and verify "
+            "runtime parity before distribution build or validation"
+        )
+
+    errors = []
+    errors.extend(validate_chat(root, cfg))
+    if cfg["runtime"]["custom_gpt"]["enabled"]:
+        errors.extend(validate_custom(root, cfg))
+    if cfg.get("runtime", {}).get("claude", {}).get("enabled"):
+        errors.extend(validate_claude(root, cfg))
+        errors.extend(validate_claude_skills(root, cfg))
+    if cfg.get("runtime", {}).get("opencode", {}).get("enabled"):
+        errors.extend(validate_opencode(root, cfg))
+    if cfg.get("runtime", {}).get("plugin", {}).get("enabled"):
+        errors.extend(validate_plugin(root, cfg))
+
+    if errors:
+        print("VALIDATION: FAIL")
+        for e in errors:
+            print(f"- {e}")
+        return 1
+
+    print("VALIDATION: PASS")
     return 0
 
 
