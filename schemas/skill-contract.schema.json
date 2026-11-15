@@ -87,6 +87,12 @@
         },
         "additionalProperties": false
       }
+    },
+    "resource_policy": {
+      "enum": [
+        "explicit",
+        "inferred"
+      ]
     }
   },
   "additionalProperties": false

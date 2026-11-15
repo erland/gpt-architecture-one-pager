@@ -8,7 +8,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES_PATH = ROOT / "tests/runtime-regression-cases.json"
-INSTRUCTIONS_PATH = ROOT / "gpt-configuration/gpt-instructions.txt"
+CORE_PATH = ROOT / "canonical/core.md"
+SKILL_PATH = ROOT / "canonical/skills/architecture-one-pager/behavior.md"
+INSTRUCTIONS_PATH = ROOT / "gpt-configuration/gpt-instructions.txt"  # frozen migration reference
 PREAMBLE_PATH = ROOT / "portable/START-HERE-PREAMBLE.md"
 DIST_PATH = ROOT / "dist"
 
@@ -73,6 +75,12 @@ REQUIRED_RUNTIME_RULES = {
         "distinguish verified evidence from sources merely identified",
         "Never output unresolved source placeholders",
         "Never imply browsing or source verification occurred unless it actually did",
+    ],
+    "rendered-citations": [
+        "SOURCE TRACEABILITY AND RENDERED-OUTPUT GATE",
+        "inspect the final user-visible rendering",
+        "normal Markdown link",
+        "Never output unresolved source placeholders",
     ],
     "compact-output": [
         "500-750 words",
@@ -199,17 +207,22 @@ def validate_chat_compilation() -> None:
         if "assistant/instructions.md" not in archive.namelist():
             fail("Chat archive lacks assistant/instructions.md")
         compiled = archive.read("assistant/instructions.md").decode("utf-8")
-        if INSTRUCTIONS_PATH.read_text(encoding="utf-8").strip() not in compiled:
-            fail("Chat instructions do not include complete canonical instructions")
+        if CORE_PATH.read_text(encoding="utf-8").strip() not in compiled:
+            fail("Chat instructions do not contain canonical core")
+        if SKILL_PATH.read_text(encoding="utf-8").strip() not in compiled:
+            fail("Chat instructions do not contain complete canonical Skill")
         if "Chat ZIP" not in archive.read("START-HERE.md").decode("utf-8"):
             fail("Chat archive lost portable runtime identity marker")
 
 
 def main() -> int:
     data = json.loads(CASES_PATH.read_text(encoding="utf-8"))
-    instructions = INSTRUCTIONS_PATH.read_text(encoding="utf-8")
+    instructions = CORE_PATH.read_text(encoding="utf-8") + "\n" + SKILL_PATH.read_text(encoding="utf-8")
     validate_cases(data)
     validate_runtime_contract(instructions)
+    # Historical original must remain accessible for migration traceability.
+    if not INSTRUCTIONS_PATH.is_file():
+        fail("Migration baseline missing")
     validate_chat_compilation()
     print(f"Runtime regression contract OK: {len(data['cases'])} cases")
     print("Small-model gates covered: topic, language, classification, freshness, recommendation, org context, public sector, structure, source traceability, compactness, export, chat independence")

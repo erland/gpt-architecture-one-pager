@@ -48,21 +48,13 @@ model_robustness:
   deterministic_gates: true
   instruction_adherence_evals: true
 instructions:
-  canonical: gpt-configuration/gpt-instructions.txt
+  mode: modular_skills
+  core: canonical/core.md
+  canonical: canonical/core.md
   core_contract:
     enabled: true
     required_markers:
     - RUNTIME CONTRACT — FOLLOW FOR EVERY ONE-PAGER REQUEST
-    - 1. LANGUAGE
-    - 2. TOPIC CHECK
-    - 3. CLASSIFICATION
-    - 4. CURRENT-INFORMATION CHECK
-    - 5. ASSESSMENT
-    - 6. RECOMMENDATION
-    - 7. OUTPUT
-    - 8. EXPORT
-    - Choose exactly one recommendation
-    - FINAL SELF-CHECK BEFORE SENDING A ONE-PAGER
     knowledge_may_not_be_required_for_core_behavior: true
 knowledge_architecture:
   canonical_root: knowledge
@@ -332,14 +324,16 @@ build_system:
   - '**/__pycache__/**'
   - '**/.pytest_cache/**'
 skills:
+  resource_policy: explicit
   contract_version: 1
   schema: schemas/skill-contract.schema.json
-  mode: inferred
+  mode: explicit
   definitions:
   - id: architecture-one-pager
     name: architecture-one-pager
     description: Skapa beslutsorienterade one-pagers för teknik, produkter, metoder
       och trender.
+    source: canonical/skills/architecture-one-pager/behavior.md
     references: []
     assets: []
     scripts: []
