@@ -24,7 +24,7 @@ jobs:
           python-version: '3.12'
 
       - name: Install validation dependencies
-        run: python3 -m pip install pyyaml
+        run: python3 -m pip install pyyaml jsonschema
 
       - name: Validate project with canonical GPT Byggaren lint
         run: python3 scripts/lint_gpt_project.py
