@@ -189,7 +189,7 @@ def validate_chat_compilation() -> None:
         compiled = archive.read("assistant/instructions.md").decode("utf-8")
         if INSTRUCTIONS_PATH.read_text(encoding="utf-8").strip() not in compiled:
             fail("Chat instructions do not include complete canonical instructions")
-        if "portable ChatGPT distribution" not in archive.read("START-HERE.md").decode("utf-8"):
+        if "Chat ZIP" not in archive.read("START-HERE.md").decode("utf-8"):
             fail("Chat archive lost portable runtime identity marker")
 
 
